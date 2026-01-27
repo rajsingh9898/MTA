@@ -77,11 +77,11 @@ export default function RegisterPage() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Register</CardTitle>
-                <CardDescription>
-                    Create a new account to start planning your trips
+        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-2xl">
+            <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold tracking-tight text-center">Create an account</CardTitle>
+                <CardDescription className="text-center">
+                    Enter your email below to create your account
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -94,7 +94,7 @@ export default function RegisterPage() {
                                 <FormItem>
                                     <FormLabel>Email</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="m@example.com" {...field} />
+                                        <Input placeholder="m@example.com" {...field} className="bg-background/50" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -107,13 +107,13 @@ export default function RegisterPage() {
                                 <FormItem>
                                     <FormLabel>Password</FormLabel>
                                     <FormControl>
-                                        <Input type="password" {...field} />
+                                        <Input type="password" {...field} className="bg-background/50" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-                        <Button type="submit" className="w-full" disabled={isLoading}>
+                        <Button type="submit" className="w-full bg-gradient-to-r from-primary to-teal-600 hover:from-primary/90 hover:to-teal-600/90 transition-all duration-300" disabled={isLoading}>
                             {isLoading ? "Creating account..." : "Register"}
                         </Button>
                     </form>
@@ -122,7 +122,7 @@ export default function RegisterPage() {
             <CardFooter className="flex justify-center">
                 <p className="text-sm text-muted-foreground">
                     Already have an account?{" "}
-                    <Link href="/login" className="text-primary hover:underline">
+                    <Link href="/login" className="text-primary hover:underline font-medium">
                         Login
                     </Link>
                 </p>

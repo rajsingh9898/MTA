@@ -1,10 +1,7 @@
-import { notFound, redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
-
-import { authOptions } from "@/lib/auth"
+import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { getDestinationImage } from "@/lib/unsplash"
-import { ItineraryView } from "@/components/itinerary-view"
+import { SharedItineraryView } from "@/components/shared-itinerary-view"
 
 interface ItineraryData {
     overview: {
@@ -31,39 +28,32 @@ interface ItineraryData {
     }
 }
 
-export default async function ItineraryPage({
+export default async function SharedItineraryPage({
     params,
 }: {
-    params: Promise<{ id: string }>
+    params: Promise<{ token: string }>
 }) {
-    const session = await getServerSession(authOptions)
-    const { id } = await params
+    const { token } = await params
 
-    if (!session) {
-        redirect("/login")
-    }
-
+    // Find itinerary by share token
     const itinerary = await prisma.itinerary.findUnique({
         where: {
-            id,
+            shareToken: token,
         },
     })
 
-    if (!itinerary) {
+    // Must exist and be public
+    if (!itinerary || !itinerary.isPublic) {
         notFound()
-    }
-
-    if (itinerary.userId !== session.user.id) {
-        redirect("/dashboard")
     }
 
     const data = itinerary.itineraryData as unknown as ItineraryData
 
-    // Fetch destination image from Unsplash
+    // Fetch destination image
     const imageData = await getDestinationImage(itinerary.destination)
 
     return (
-        <ItineraryView
+        <SharedItineraryView
             itinerary={itinerary}
             data={data}
             imageUrl={imageData.url}
@@ -72,4 +62,3 @@ export default async function ItineraryPage({
         />
     )
 }
-

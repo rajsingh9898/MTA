@@ -73,10 +73,10 @@ export default function LoginPage() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Login</CardTitle>
-                <CardDescription>
+        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-2xl">
+            <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold tracking-tight text-center">Welcome back</CardTitle>
+                <CardDescription className="text-center">
                     Enter your email and password to access your account
                 </CardDescription>
             </CardHeader>
@@ -90,7 +90,7 @@ export default function LoginPage() {
                                 <FormItem>
                                     <FormLabel>Email</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="m@example.com" {...field} />
+                                        <Input placeholder="m@example.com" {...field} className="bg-background/50" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -103,13 +103,13 @@ export default function LoginPage() {
                                 <FormItem>
                                     <FormLabel>Password</FormLabel>
                                     <FormControl>
-                                        <Input type="password" {...field} />
+                                        <Input type="password" {...field} className="bg-background/50" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-                        <Button type="submit" className="w-full" disabled={isLoading}>
+                        <Button type="submit" className="w-full bg-gradient-to-r from-primary to-teal-600 hover:from-primary/90 hover:to-teal-600/90 transition-all duration-300" disabled={isLoading}>
                             {isLoading ? "Logging in..." : "Login"}
                         </Button>
                     </form>
@@ -118,7 +118,7 @@ export default function LoginPage() {
             <CardFooter className="flex justify-center">
                 <p className="text-sm text-muted-foreground">
                     Don&apos;t have an account?{" "}
-                    <Link href="/register" className="text-primary hover:underline">
+                    <Link href="/register" className="text-primary hover:underline font-medium">
                         Register
                     </Link>
                 </p>

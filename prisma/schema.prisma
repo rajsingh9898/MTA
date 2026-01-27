@@ -38,6 +38,15 @@ model Itinerary {
   partySize       Int      @map("party_size")
   activityLevel   String   @map("activity_level") // "relaxed", "moderate", "active", "very-active"
   
+  // New preference fields
+  dietaryRestrictions String[] @default([]) @map("dietary_restrictions")
+  accessibilityNeeds  String[] @default([]) @map("accessibility_needs")
+  interests           String[] @default([]) @map("interests")
+  
+  // Sharing
+  shareToken      String?  @unique @map("share_token")
+  isPublic        Boolean  @default(false) @map("is_public")
+  
   // Generated Itinerary (JSONB)
   itineraryData   Json     @map("itinerary_data")
   
@@ -54,5 +63,7 @@ model Itinerary {
   @@index([userId])
   @@index([destination])
   @@index([createdAt])
+  @@index([shareToken])
   @@map("itineraries")
 }
+

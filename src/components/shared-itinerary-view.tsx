@@ -1,8 +1,9 @@
 "use client"
 
 import { format } from "date-fns"
-import { Calendar, DollarSign, Users, Clock, Sparkles, Navigation, Wallet, Activity } from "lucide-react"
+import { Calendar, DollarSign, Users, Clock, Sparkles, Navigation, Wallet, Activity, ArrowLeft } from "lucide-react"
 import { motion, Variants } from "framer-motion"
+import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,9 +13,6 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { DeleteItineraryButton } from "@/components/delete-itinerary-button"
-import { ExportPdfButton } from "@/components/export-pdf-button"
-import { ShareItineraryButton } from "@/components/share-itinerary-button"
 import { Itinerary } from "@prisma/client"
 
 interface ItineraryData {
@@ -42,7 +40,7 @@ interface ItineraryData {
     }
 }
 
-interface ItineraryViewProps {
+interface SharedItineraryViewProps {
     itinerary: Itinerary
     data: ItineraryData
     imageUrl?: string
@@ -72,7 +70,7 @@ const itemVariants: Variants = {
     }
 }
 
-export function ItineraryView({ itinerary, data, imageUrl, photographer, photographerUrl }: ItineraryViewProps) {
+export function SharedItineraryView({ itinerary, data, imageUrl, photographer, photographerUrl }: SharedItineraryViewProps) {
     const defaultImage = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop"
     const heroImage = imageUrl || defaultImage
 
@@ -86,7 +84,6 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                 className="relative h-[40vh] w-full bg-slate-900 overflow-hidden"
             >
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/90 z-10" />
-                {/* Dynamic destination image from Unsplash */}
                 <div
                     className="absolute inset-0 bg-cover bg-center opacity-60"
                     style={{ backgroundImage: `url('${heroImage}')` }}
@@ -101,7 +98,7 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                             className="space-y-4"
                         >
                             <Badge className="bg-primary/20 text-primary-foreground hover:bg-primary/30 border-none backdrop-blur-md">
-                                <Sparkles className="w-3 h-3 mr-1" /> AI Generated Trip
+                                <Sparkles className="w-3 h-3 mr-1" /> Shared Itinerary
                             </Badge>
                             <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
                                 {itinerary.destination}
@@ -125,16 +122,17 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.5, duration: 0.6 }}
-                            className="flex gap-3"
                         >
-                            <ShareItineraryButton itineraryId={itinerary.id} />
-                            <DeleteItineraryButton id={itinerary.id} />
-                            <ExportPdfButton data={data} />
+                            <Button asChild variant="outline" className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20">
+                                <Link href="/">
+                                    <ArrowLeft className="h-4 w-4" />
+                                    Create Your Own
+                                </Link>
+                            </Button>
                         </motion.div>
                     </div>
                 </div>
 
-                {/* Photographer credit */}
                 {photographer && photographerUrl && (
                     <div className="absolute bottom-2 right-4 z-30">
                         <a
@@ -190,7 +188,7 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                         <CardContent>
                             <div className="flex flex-wrap gap-2">
                                 {data.summary.keyHighlights.slice(0, 3).map((highlight, i) => (
-                                    <Badge key={i} variant="secondary" className="bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">
+                                    <Badge key={i} variant="secondary" className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
                                         {highlight}
                                     </Badge>
                                 ))}
@@ -208,7 +206,7 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                 >
                     <motion.div variants={itemVariants} className="flex items-center gap-3">
                         <div className="h-8 w-1 bg-primary rounded-full" />
-                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Your Daily Plan</h2>
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Daily Itinerary</h2>
                     </motion.div>
 
                     <div className="grid gap-8">
@@ -233,13 +231,11 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                     </div>
                                     <CardContent className="p-0">
                                         <div className="relative">
-                                            {/* Vertical line for timeline */}
                                             <div className="absolute left-8 top-6 bottom-6 w-px bg-gradient-to-b from-primary/50 to-transparent md:left-12" />
 
                                             <div className="space-y-8 p-6 md:p-8">
                                                 {day.activities.map((activity, index) => (
                                                     <div key={index} className="relative pl-10 md:pl-16 group">
-                                                        {/* Timeline dot */}
                                                         <div className="absolute left-[27px] md:left-[43px] top-2 h-3 w-3 rounded-full border-2 border-primary bg-white dark:bg-gray-800 z-10 group-hover:scale-125 transition-transform duration-200" />
 
                                                         <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5 hover:shadow-md transition-shadow duration-200 border border-gray-100 dark:border-gray-700">
@@ -290,6 +286,23 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                             </motion.div>
                         ))}
                     </div>
+                </motion.div>
+
+                {/* Call to action */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1, duration: 0.6 }}
+                    className="text-center py-12"
+                >
+                    <h3 className="text-2xl font-bold mb-4">Like this itinerary?</h3>
+                    <p className="text-muted-foreground mb-6">Create your own personalized trip with our AI-powered planner.</p>
+                    <Button asChild size="lg" className="gap-2">
+                        <Link href="/">
+                            <Sparkles className="h-5 w-5" />
+                            Create Your Itinerary
+                        </Link>
+                    </Button>
                 </motion.div>
             </div>
         </div>

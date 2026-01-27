@@ -27,18 +27,20 @@ export default async function DashboardPage() {
     })
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <div className="min-h-screen bg-background relative overflow-hidden py-12 px-4 sm:px-6 lg:px-8">
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 via-background to-cyan-500/5 dark:from-teal-900/20 dark:via-background dark:to-cyan-900/20 -z-10" />
+
+            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
+                        <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
                             My Adventures
                         </h1>
                         <p className="text-muted-foreground mt-2">
                             Manage your planned trips and explore new destinations.
                         </p>
                     </div>
-                    <Button asChild size="lg" className="shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90">
+                    <Button asChild size="lg" className="shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-primary to-teal-600 hover:from-primary/90 hover:to-teal-600/90">
                         <Link href="/create">
                             <Plus className="mr-2 h-5 w-5" />
                             Plan New Trip
@@ -47,11 +49,11 @@ export default async function DashboardPage() {
                 </div>
 
                 {itineraries.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-dashed border-gray-200 dark:border-gray-700">
-                        <div className="bg-primary/10 p-6 rounded-full mb-6">
+                    <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-card/50 backdrop-blur-sm rounded-3xl shadow-sm border border-dashed border-border">
+                        <div className="bg-primary/10 p-6 rounded-full mb-6 animate-pulse">
                             <Map className="h-12 w-12 text-primary" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                        <h2 className="text-2xl font-bold text-foreground mb-3">
                             No itineraries yet
                         </h2>
                         <p className="text-muted-foreground max-w-md mb-8 text-lg">
