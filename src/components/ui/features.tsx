@@ -1,87 +1,103 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Brain, Users, Map, Sparkles, Clock, Wallet } from "lucide-react";
+import * as React from "react"
+import { motion } from "framer-motion"
+import {
+    Sparkles,
+    MapPin,
+    Wallet,
+    Clock,
+    Users,
+    Compass,
+    type LucideIcon
+} from "lucide-react"
 
-import { motion } from "framer-motion";
+interface Feature {
+    title: string
+    description: string
+    icon: LucideIcon
+}
+
+const features: Feature[] = [
+    {
+        title: "AI-Powered Planning",
+        description: "Our AI analyzes thousands of destinations, reviews, and local insights to craft your perfect itinerary.",
+        icon: Sparkles,
+    },
+    {
+        title: "Smart Recommendations",
+        description: "Get personalized suggestions for attractions, restaurants, and hidden gems based on your travel style.",
+        icon: Compass,
+    },
+    {
+        title: "Budget Management",
+        description: "Set your budget tier and receive recommendations that maximize value without compromise.",
+        icon: Wallet,
+    },
+    {
+        title: "Route Optimization",
+        description: "Intelligent scheduling that minimizes travel time and maximizes your experiences each day.",
+        icon: Clock,
+    },
+    {
+        title: "Group Planning",
+        description: "Plan for any group size with age-appropriate activities and accessibility considerations.",
+        icon: Users,
+    },
+    {
+        title: "Real Destinations",
+        description: "Access verified information for 190+ countries with accurate costs and travel tips.",
+        icon: MapPin,
+    },
+]
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+        },
+    },
+}
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.5,
+            ease: [0.16, 1, 0.3, 1],
+        },
+    },
+}
 
 export function Features() {
-    const features = [
-        {
-            title: "AI-Powered Itineraries",
-            description: "Generate personalized travel plans instantly with cutting‑edge AI analysis of thousands of data points.",
-            icon: Brain,
-        },
-        {
-            title: "Collaborative Planning",
-            description: "Share and edit itineraries with friends or family in real time. Plan together, travel together.",
-            icon: Users,
-        },
-        {
-            title: "Smart Recommendations",
-            description: "Get suggestions for attractions, restaurants, and activities based on your unique interests and budget.",
-            icon: Sparkles,
-        },
-        {
-            title: "Interactive Maps",
-            description: "Visualize your trip with integrated maps for every day of your journey.",
-            icon: Map,
-        },
-        {
-            title: "Real-time Optimization",
-            description: "Our AI optimizes routes to save you time and maximize your experience.",
-            icon: Clock,
-        },
-        {
-            title: "Budget Management",
-            description: "Keep track of expenses and get recommendations that fit your financial plan.",
-            icon: Wallet,
-        },
-    ];
-
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
-        }
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.5
-            }
-        }
-    };
-
     return (
-        <section className="py-24 bg-background relative z-0">
-            {/* Background decoration */}
-            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-10 pointer-events-none" />
+        <section className="py-24 lg:py-32 relative">
+            {/* Background */}
+            <div className="absolute inset-0 bg-secondary/30" />
 
-            <div className="container mx-auto px-4 relative z-10">
+            <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Section Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
-                    className="text-center max-w-3xl mx-auto mb-16"
+                    transition={{ duration: 0.6 }}
+                    className="text-center max-w-2xl mx-auto mb-16"
                 >
-                    <h2 className="text-3xl md:text-5xl font-bold mb-6 text-gray-900 dark:text-white">
-                        Everything you need for the <span className="text-primary">perfect trip</span>
+                    <span className="label text-primary mb-4 block">Features</span>
+                    <h2 className="heading-2 mb-4">
+                        Everything you need to plan the perfect trip
                     </h2>
-                    <p className="text-xl text-muted-foreground">
-                        Powerful features to help you plan, organize, and enjoy your travels without the stress.
+                    <p className="body-lg text-muted-foreground">
+                        Powerful features designed to make travel planning effortless and enjoyable.
                     </p>
                 </motion.div>
 
+                {/* Features Grid */}
                 <motion.div
                     variants={containerVariants}
                     initial="hidden"
@@ -89,25 +105,30 @@ export function Features() {
                     viewport={{ once: true }}
                     className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
                 >
-                    {features.map((f, idx) => (
-                        <motion.div key={idx} variants={itemVariants}>
-                            <Card className="group border-border/50 shadow-lg hover:shadow-xl transition-all duration-300 bg-card/50 backdrop-blur-sm hover:-translate-y-1 h-full">
-                                <CardHeader>
-                                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-                                        <f.icon className="w-6 h-6 text-primary group-hover:text-white transition-colors duration-300" />
-                                    </div>
-                                    <CardTitle className="text-xl mb-2">{f.title}</CardTitle>
-                                    <CardDescription className="text-base leading-relaxed">
-                                        {f.description}
-                                    </CardDescription>
-                                </CardHeader>
-                            </Card>
+                    {features.map((feature, idx) => (
+                        <motion.div
+                            key={idx}
+                            variants={itemVariants}
+                            className="group relative bg-card rounded-2xl p-6 border border-border/60 hover:border-primary/30 hover:shadow-elevated transition-all duration-300"
+                        >
+                            {/* Icon */}
+                            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+                                <feature.icon className="w-5 h-5" />
+                            </div>
+
+                            {/* Content */}
+                            <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+                                {feature.title}
+                            </h3>
+                            <p className="text-muted-foreground text-sm leading-relaxed">
+                                {feature.description}
+                            </p>
                         </motion.div>
                     ))}
                 </motion.div>
             </div>
         </section>
-    );
+    )
 }
 
-export default Features;
+export default Features

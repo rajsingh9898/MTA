@@ -8,16 +8,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
+import { motion } from "framer-motion"
+import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
 import {
     Form,
     FormControl,
@@ -29,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 const loginSchema = z.object({
-    email: z.string().email("Invalid email address"),
+    email: z.string().email("Please enter a valid email"),
     password: z.string().min(1, "Password is required"),
 })
 
@@ -62,10 +56,10 @@ export default function LoginPage() {
                 return
             }
 
-            toast.success("Logged in successfully")
+            toast.success("Welcome back!")
             router.push("/dashboard")
             router.refresh()
-        } catch (error) {
+        } catch {
             toast.error("Something went wrong. Please try again.")
         } finally {
             setIsLoading(false)
@@ -73,56 +67,100 @@ export default function LoginPage() {
     }
 
     return (
-        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-2xl">
-            <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-bold tracking-tight text-center">Welcome back</CardTitle>
-                <CardDescription className="text-center">
-                    Enter your email and password to access your account
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="m@example.com" {...field} className="bg-background/50" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Password</FormLabel>
-                                    <FormControl>
-                                        <Input type="password" {...field} className="bg-background/50" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <Button type="submit" className="w-full bg-gradient-to-r from-primary to-teal-600 hover:from-primary/90 hover:to-teal-600/90 transition-all duration-300" disabled={isLoading}>
-                            {isLoading ? "Logging in..." : "Login"}
-                        </Button>
-                    </form>
-                </Form>
-            </CardContent>
-            <CardFooter className="flex justify-center">
-                <p className="text-sm text-muted-foreground">
-                    Don&apos;t have an account?{" "}
-                    <Link href="/register" className="text-primary hover:underline font-medium">
-                        Register
-                    </Link>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="space-y-8"
+        >
+            {/* Header */}
+            <div className="text-center lg:text-left">
+                <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">
+                    Welcome back
+                </h1>
+                <p className="text-muted-foreground">
+                    Sign in to continue planning your adventures
                 </p>
-            </CardFooter>
-        </Card>
+            </div>
+
+            {/* Form */}
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-sm font-medium">Email</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="you@example.com"
+                                        type="email"
+                                        autoComplete="email"
+                                        disabled={isLoading}
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <div className="flex items-center justify-between">
+                                    <FormLabel className="text-sm font-medium">Password</FormLabel>
+                                    <Link
+                                        href="#"
+                                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        Forgot password?
+                                    </Link>
+                                </div>
+                                <FormControl>
+                                    <Input
+                                        type="password"
+                                        autoComplete="current-password"
+                                        disabled={isLoading}
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                            </FormItem>
+                        )}
+                    />
+
+                    <Button
+                        type="submit"
+                        size="lg"
+                        className="w-full rounded-xl"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Signing in...
+                            </>
+                        ) : (
+                            "Sign In"
+                        )}
+                    </Button>
+                </form>
+            </Form>
+
+            {/* Footer */}
+            <p className="text-center text-sm text-muted-foreground">
+                Don&apos;t have an account?{" "}
+                <Link
+                    href="/register"
+                    className="text-foreground font-medium hover:underline underline-offset-4"
+                >
+                    Create one
+                </Link>
+            </p>
+        </motion.div>
     )
 }

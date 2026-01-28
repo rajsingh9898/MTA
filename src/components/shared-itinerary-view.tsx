@@ -1,19 +1,35 @@
 "use client"
 
-import { format } from "date-fns"
-import { Calendar, DollarSign, Users, Clock, Sparkles, Navigation, Wallet, Activity, ArrowLeft } from "lucide-react"
-import { motion, Variants } from "framer-motion"
+import { motion } from "framer-motion"
+import Image from "next/image"
 import Link from "next/link"
+import {
+    MapPin,
+    CalendarDays,
+    Users,
+    Wallet,
+    Clock,
+    Sparkles,
+    Share2,
+    ArrowRight
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Itinerary } from "@prisma/client"
+
+interface Activity {
+    timeSlot: string
+    name: string
+    description: string
+    cost: string
+    whyRecommended: string
+}
+
+interface Day {
+    day: number
+    activities: Activity[]
+    transportation: string
+    dailyCost: string
+}
 
 interface ItineraryData {
     overview: {
@@ -21,18 +37,7 @@ interface ItineraryData {
         duration: string
         totalEstimatedCost: string
     }
-    days: {
-        day: number
-        activities: {
-            timeSlot: string
-            name: string
-            description: string
-            cost: string
-            whyRecommended: string
-        }[]
-        transportation: string
-        dailyCost: string
-    }[]
+    days: Day[]
     summary: {
         totalEstimatedCost: string
         totalActivities: number
@@ -40,267 +45,273 @@ interface ItineraryData {
     }
 }
 
+interface Itinerary {
+    id: string
+    destination: string
+    numDays: number
+    budget: string
+    partySize: number
+    activityLevel: string
+    dietaryRestrictions: string[]
+    accessibilityNeeds: string[]
+    interests: string[]
+}
+
 interface SharedItineraryViewProps {
     itinerary: Itinerary
     data: ItineraryData
-    imageUrl?: string
+    imageUrl: string
     photographer?: string
     photographerUrl?: string
 }
 
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.15
-        }
-    }
-}
-
-const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-            duration: 0.5,
-            ease: "easeOut"
-        }
-    }
-}
-
 export function SharedItineraryView({ itinerary, data, imageUrl, photographer, photographerUrl }: SharedItineraryViewProps) {
-    const defaultImage = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop"
-    const heroImage = imageUrl || defaultImage
+    // Handle case where data is not available
+    if (!data || !data.overview) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-lg text-muted-foreground">Loading itinerary details...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            {/* Hero Section */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8 }}
-                className="relative h-[40vh] w-full bg-slate-900 overflow-hidden"
-            >
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/90 z-10" />
-                <div
-                    className="absolute inset-0 bg-cover bg-center opacity-60"
-                    style={{ backgroundImage: `url('${heroImage}')` }}
-                />
-
-                <div className="relative z-20 container mx-auto h-full flex flex-col justify-end pb-12 px-4">
-                    <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3, duration: 0.6 }}
-                            className="space-y-4"
-                        >
-                            <Badge className="bg-primary/20 text-primary-foreground hover:bg-primary/30 border-none backdrop-blur-md">
-                                <Sparkles className="w-3 h-3 mr-1" /> Shared Itinerary
-                            </Badge>
-                            <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
-                                {itinerary.destination}
-                            </h1>
-                            <div className="flex flex-wrap gap-4 text-white/90">
-                                <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>{itinerary.numDays} Days</span>
-                                </div>
-                                <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-                                    <Users className="h-4 w-4" />
-                                    <span>{itinerary.partySize} Travelers</span>
-                                </div>
-                                <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-                                    <DollarSign className="h-4 w-4" />
-                                    <span>{itinerary.budget}</span>
-                                </div>
-                            </div>
-                        </motion.div>
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.5, duration: 0.6 }}
-                        >
-                            <Button asChild variant="outline" className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20">
-                                <Link href="/">
-                                    <ArrowLeft className="h-4 w-4" />
-                                    Create Your Own
-                                </Link>
-                            </Button>
-                        </motion.div>
+        <div className="min-h-screen bg-background">
+            {/* Shared Banner */}
+            <div className="bg-primary/10 border-b border-primary/20">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                        <Share2 className="w-4 h-4 text-primary" />
+                        <span className="text-primary font-medium">Shared Itinerary</span>
+                        <span className="text-muted-foreground hidden sm:inline">— Created with MTA</span>
                     </div>
+                    <Button asChild size="sm" variant="soft" className="rounded-full">
+                        <Link href="/create">
+                            Create Your Own
+                        </Link>
+                    </Button>
                 </div>
+            </div>
 
-                {photographer && photographerUrl && (
-                    <div className="absolute bottom-2 right-4 z-30">
+            {/* Hero Section */}
+            <div className="relative h-[45vh] min-h-[350px]">
+                <Image
+                    src={imageUrl}
+                    alt={itinerary.destination}
+                    fill
+                    className="object-cover"
+                    priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+
+                {/* Photo Credit */}
+                {photographer && (
+                    <div className="absolute top-6 right-6 z-10">
                         <a
                             href={photographerUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-white/50 hover:text-white/80 transition-colors"
+                            className="text-xs text-white/60 hover:text-white/80 transition-colors"
                         >
-                            Photo by {photographer} on Unsplash
+                            Photo by {photographer}
                         </a>
                     </div>
                 )}
-            </motion.div>
 
-            <div className="container mx-auto py-12 px-4 space-y-12 -mt-8 relative z-30">
+                {/* Hero Content */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-12">
+                    <div className="max-w-6xl mx-auto">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <div className="flex items-center gap-2 text-white/80 mb-2">
+                                <MapPin className="w-4 h-4" />
+                                <span className="text-sm font-medium uppercase tracking-wide">Travel Itinerary</span>
+                            </div>
+                            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-4">
+                                {itinerary.destination}
+                            </h1>
+
+                            {/* Meta Tags */}
+                            <div className="flex flex-wrap gap-3">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm">
+                                    <CalendarDays className="w-3.5 h-3.5" />
+                                    {itinerary.numDays} days
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm">
+                                    <Users className="w-3.5 h-3.5" />
+                                    {itinerary.partySize} travelers
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm">
+                                    <Wallet className="w-3.5 h-3.5" />
+                                    {itinerary.budget}
+                                </span>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
                 {/* Overview Cards */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6, duration: 0.6 }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
                 >
-                    <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-none shadow-lg">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <Wallet className="w-4 h-4" /> Total Estimated Cost
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-primary">
-                                {data.summary.totalEstimatedCost}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-none shadow-lg">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <Activity className="w-4 h-4" /> Total Activities
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-primary">
-                                {data.summary.totalActivities}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-none shadow-lg">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <Sparkles className="w-4 h-4" /> Trip Highlights
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-wrap gap-2">
-                                {data.summary.keyHighlights.slice(0, 3).map((highlight, i) => (
-                                    <Badge key={i} variant="secondary" className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                        {highlight}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                {/* Day by Day */}
-                <motion.div
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className="space-y-8"
-                >
-                    <motion.div variants={itemVariants} className="flex items-center gap-3">
-                        <div className="h-8 w-1 bg-primary rounded-full" />
-                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Daily Itinerary</h2>
-                    </motion.div>
-
-                    <div className="grid gap-8">
-                        {data.days.map((day) => (
-                            <motion.div key={day.day} variants={itemVariants}>
-                                <Card className="overflow-hidden border-none shadow-xl bg-white dark:bg-gray-800">
-                                    <div className="bg-gradient-to-r from-primary/10 to-transparent p-6 border-b border-primary/10">
-                                        <div className="flex justify-between items-center">
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-primary-foreground font-bold text-xl shadow-lg">
-                                                    {day.day}
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-bold">Day {day.day}</h3>
-                                                    <p className="text-muted-foreground text-sm">Explore & Discover</p>
-                                                </div>
-                                            </div>
-                                            <Badge variant="outline" className="text-lg px-4 py-1 border-primary/20 bg-primary/5">
-                                                {day.dailyCost}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                    <CardContent className="p-0">
-                                        <div className="relative">
-                                            <div className="absolute left-8 top-6 bottom-6 w-px bg-gradient-to-b from-primary/50 to-transparent md:left-12" />
-
-                                            <div className="space-y-8 p-6 md:p-8">
-                                                {day.activities.map((activity, index) => (
-                                                    <div key={index} className="relative pl-10 md:pl-16 group">
-                                                        <div className="absolute left-[27px] md:left-[43px] top-2 h-3 w-3 rounded-full border-2 border-primary bg-white dark:bg-gray-800 z-10 group-hover:scale-125 transition-transform duration-200" />
-
-                                                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5 hover:shadow-md transition-shadow duration-200 border border-gray-100 dark:border-gray-700">
-                                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-                                                                <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                                                                    <Clock className="h-4 w-4" />
-                                                                    {activity.timeSlot}
-                                                                </div>
-                                                                <Badge variant="secondary" className="w-fit">{activity.cost}</Badge>
-                                                            </div>
-
-                                                            <h4 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">
-                                                                {activity.name}
-                                                            </h4>
-                                                            <p className="text-muted-foreground mb-4 leading-relaxed">
-                                                                {activity.description}
-                                                            </p>
-
-                                                            <div className="bg-primary/5 rounded-lg p-3 text-sm border border-primary/10">
-                                                                <span className="font-semibold text-primary flex items-center gap-2 mb-1">
-                                                                    <Sparkles className="w-3 h-3" /> Why we recommend this:
-                                                                </span>
-                                                                <span className="text-gray-600 dark:text-gray-300">
-                                                                    {activity.whyRecommended}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-slate-50 dark:bg-slate-900/50 p-6 border-t border-gray-100 dark:border-gray-700">
-                                            <div className="flex items-start gap-4">
-                                                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-                                                    <Navigation className="h-5 w-5" />
-                                                </div>
-                                                <div>
-                                                    <h5 className="font-semibold mb-1">Getting Around</h5>
-                                                    <p className="text-muted-foreground text-sm leading-relaxed">
-                                                        {day.transportation}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
+                    <div className="bg-card border border-border/60 rounded-2xl p-5">
+                        <p className="label mb-2">Total Budget</p>
+                        <p className="text-xl font-semibold">
+                            {data.overview.totalEstimatedCost || data.summary?.totalEstimatedCost}
+                        </p>
+                    </div>
+                    <div className="bg-card border border-border/60 rounded-2xl p-5">
+                        <p className="label mb-2">Duration</p>
+                        <p className="text-lg font-semibold">
+                            {data.overview.duration || `${itinerary.numDays} days`}
+                        </p>
+                    </div>
+                    <div className="bg-card border border-border/60 rounded-2xl p-5">
+                        <p className="label mb-2">Activity Level</p>
+                        <p className="text-lg font-semibold">{itinerary.activityLevel}</p>
+                    </div>
+                    <div className="bg-card border border-border/60 rounded-2xl p-5">
+                        <p className="label mb-2">Activities</p>
+                        <p className="text-2xl font-semibold">
+                            {data.summary?.totalActivities || data.days?.reduce((sum, day) => sum + day.activities.length, 0) || 0}
+                        </p>
                     </div>
                 </motion.div>
 
-                {/* Call to action */}
+                {/* Highlights */}
+                {data.summary?.keyHighlights && data.summary.keyHighlights.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.3 }}
+                        className="mb-12"
+                    >
+                        <div className="flex items-center gap-2 mb-4">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                            <h2 className="text-xl font-semibold">Trip Highlights</h2>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {data.summary.keyHighlights.map((highlight, idx) => (
+                                <span
+                                    key={idx}
+                                    className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium"
+                                >
+                                    {highlight}
+                                </span>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Daily Itinerary */}
+                <div className="space-y-8">
+                    <h2 className="text-2xl font-display font-semibold">Day-by-Day Plan</h2>
+
+                    {data.days?.map((day, dayIdx) => (
+                        <motion.div
+                            key={day.day}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.1 * dayIdx }}
+                            className="bg-card border border-border/60 rounded-2xl overflow-hidden"
+                        >
+                            {/* Day Header */}
+                            <div className="bg-gradient-to-r from-primary/10 to-transparent p-6 border-b border-border/40">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <span className="label text-primary">Day {day.day}</span>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            Daily cost: {day.dailyCost}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Activities */}
+                            <div className="p-6 space-y-6">
+                                {day.activities.map((activity, actIdx) => (
+                                    <div key={actIdx} className="flex gap-4">
+                                        {/* Time */}
+                                        <div className="flex-shrink-0 w-24">
+                                            <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                                <Clock className="w-3.5 h-3.5" />
+                                                {activity.timeSlot}
+                                            </div>
+                                        </div>
+
+                                        {/* Timeline Dot */}
+                                        <div className="relative flex flex-col items-center">
+                                            <div className="w-3 h-3 rounded-full bg-primary shrink-0" />
+                                            {actIdx < day.activities.length - 1 && (
+                                                <div className="w-px h-full bg-border absolute top-3" />
+                                            )}
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="flex-1 pb-6">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <h4 className="font-semibold">{activity.name}</h4>
+                                                <span className="text-sm font-medium text-primary whitespace-nowrap">
+                                                    {activity.cost}
+                                                </span>
+                                            </div>
+
+                                            {activity.description && (
+                                                <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+                                            )}
+
+                                            {activity.whyRecommended && (
+                                                <div className="mt-2 flex items-start gap-2 text-sm">
+                                                    <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                                    <span className="text-muted-foreground">{activity.whyRecommended}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Transportation Footer */}
+                            {day.transportation && (
+                                <div className="px-6 py-4 bg-secondary/30 border-t border-border/40">
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <span className="text-sm text-muted-foreground">Transportation:</span>
+                                        <span className="text-sm">{day.transportation}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* CTA Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1, duration: 0.6 }}
-                    className="text-center py-12"
+                    transition={{ duration: 0.4 }}
+                    className="mt-16 text-center bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-3xl p-10"
                 >
-                    <h3 className="text-2xl font-bold mb-4">Like this itinerary?</h3>
-                    <p className="text-muted-foreground mb-6">Create your own personalized trip with our AI-powered planner.</p>
-                    <Button asChild size="lg" className="gap-2">
-                        <Link href="/">
-                            <Sparkles className="h-5 w-5" />
-                            Create Your Itinerary
+                    <h2 className="font-display text-2xl font-semibold mb-3">
+                        Inspired by this trip?
+                    </h2>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                        Create your own personalized itinerary with AI-powered recommendations tailored just for you.
+                    </p>
+                    <Button asChild size="lg" className="rounded-full group">
+                        <Link href="/create">
+                            Create Your Own Trip
+                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                         </Link>
                     </Button>
                 </motion.div>

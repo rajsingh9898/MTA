@@ -5,66 +5,88 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { itinerarySchema, ItineraryInput, DIETARY_OPTIONS, ACCESSIBILITY_OPTIONS, INTEREST_OPTIONS } from "@/lib/schemas"
-import { Plane, Calendar, Users, Wallet, Activity, MapPin, Loader2, Sparkles, ArrowRight, ArrowLeft, Check, Minus, Plus, Heart } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-    CardFooter,
-} from "@/components/ui/card"
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
-
 import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
+import Link from "next/link"
+import {
+    MapPin,
+    Calendar,
+    Wallet,
+    Users,
+    Activity,
+    Heart,
+    ArrowRight,
+    ArrowLeft,
+    Sparkles,
+    Minus,
+    Plus,
+    Mountain,
+    Loader2
+} from "lucide-react"
+
+import { itinerarySchema, ItineraryInput, DIETARY_OPTIONS, ACCESSIBILITY_OPTIONS, INTEREST_OPTIONS } from "@/lib/schemas"
+import { Button } from "@/components/ui/button"
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 
 const STEPS = [
-    { id: 1, title: "Destination", icon: MapPin, description: "Where do you want to go?" },
-    { id: 2, title: "Duration", icon: Calendar, description: "How long is your trip?" },
-    { id: 3, title: "Budget", icon: Wallet, description: "What is your budget?" },
-    { id: 4, title: "Travelers", icon: Users, description: "Who is traveling?" },
-    { id: 5, title: "Pace", icon: Activity, description: "What is your preferred pace?" },
-    { id: 6, title: "Preferences", icon: Heart, description: "Any special requirements?" },
+    { id: 1, title: "Destination", description: "Where would you like to go?", icon: MapPin },
+    { id: 2, title: "Duration", description: "How long is your trip?", icon: Calendar },
+    { id: 3, title: "Budget", description: "What's your budget preference?", icon: Wallet },
+    { id: 4, title: "Travelers", description: "Who's coming along?", icon: Users },
+    { id: 5, title: "Pace", description: "How active do you want to be?", icon: Activity },
+    { id: 6, title: "Preferences", description: "Any special requirements?", icon: Heart },
 ]
 
 const TRAVELER_TYPES = [
-    { id: "Adults", label: "Adults", description: "Age 18-64" },
-    { id: "Children", label: "Children", description: "Age 0-12" },
-    { id: "Teens", label: "Teens", description: "Age 13-17" },
-    { id: "Seniors", label: "Seniors", description: "Age 65+" },
+    { id: "Adults", label: "Adults", description: "18-64 years" },
+    { id: "Children", label: "Children", description: "0-12 years" },
+    { id: "Teens", label: "Teens", description: "13-17 years" },
+    { id: "Seniors", label: "Seniors", description: "65+ years" },
 ] as const
+
+const BUDGET_OPTIONS = [
+    { value: "Budget-Friendly", label: "Budget", description: "Hostels, street food, public transport" },
+    { value: "Moderate", label: "Moderate", description: "Mid-range hotels, local restaurants" },
+    { value: "Luxury", label: "Luxury", description: "Premium hotels, fine dining" },
+    { value: "No Limit", label: "No Limit", description: "The best of everything" },
+]
+
+const PACE_OPTIONS = [
+    { value: "Relaxed", label: "Relaxed", description: "Take it slow, plenty of rest" },
+    { value: "Moderate", label: "Moderate", description: "Balanced mix of activities" },
+    { value: "Active", label: "Active", description: "Packed schedule, lots to see" },
+    { value: "Very Active", label: "Very Active", description: "Non-stop exploration" },
+]
+
+const LOADING_MESSAGES = [
+    "Finding the best experiences...",
+    "Discovering hidden gems...",
+    "Planning your routes...",
+    "Checking local favorites...",
+    "Crafting your perfect itinerary...",
+]
 
 export default function CreateItineraryPage() {
     const router = useRouter()
-    const { data: session, status } = useSession()
+    const { status } = useSession()
     const [isLoading, setIsLoading] = useState(false)
+    const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0])
     const [step, setStep] = useState(1)
     const [travelerCounts, setTravelerCounts] = useState<Record<string, number>>({
-        "Adults": 1,
-        "Children": 0,
-        "Teens": 0,
-        "Seniors": 0,
+        Adults: 1,
+        Children: 0,
+        Teens: 0,
+        Seniors: 0,
     })
 
     const form = useForm<ItineraryInput>({
         resolver: zodResolver(itinerarySchema),
         defaultValues: {
             destination: "",
-            numDays: 3,
+            numDays: 5,
             budget: "Moderate",
             ageGroups: ["Adults"],
             partySize: 1,
@@ -75,22 +97,31 @@ export default function CreateItineraryPage() {
         },
     })
 
-    // Update form values when traveler counts change
+    // Cycle loading messages
+    useEffect(() => {
+        if (!isLoading) return
+        let idx = 0
+        const interval = setInterval(() => {
+            idx = (idx + 1) % LOADING_MESSAGES.length
+            setLoadingMessage(LOADING_MESSAGES[idx])
+        }, 3000)
+        return () => clearInterval(interval)
+    }, [isLoading])
+
+    // Update form when traveler counts change
     useEffect(() => {
         const activeGroups = Object.entries(travelerCounts)
             .filter(([_, count]) => count > 0)
             .map(([type]) => type as "Adults" | "Children" | "Teens" | "Seniors")
-
         const totalPeople = Object.values(travelerCounts).reduce((a, b) => a + b, 0)
-
         form.setValue("ageGroups", activeGroups.length > 0 ? activeGroups : ["Adults"])
         form.setValue("partySize", totalPeople > 0 ? totalPeople : 1)
     }, [travelerCounts, form])
 
     if (status === "loading") {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         )
     }
@@ -102,72 +133,53 @@ export default function CreateItineraryPage() {
 
     const nextStep = async () => {
         const fieldsToValidate: (keyof ItineraryInput)[] = []
-
         switch (step) {
-            case 1: fieldsToValidate.push("destination"); break;
-            case 2: fieldsToValidate.push("numDays"); break;
-            case 3: fieldsToValidate.push("budget"); break;
-            case 4: fieldsToValidate.push("ageGroups", "partySize"); break;
-            case 5: fieldsToValidate.push("activityLevel"); break;
-            case 6: break; // Optional preferences, no validation needed
+            case 1: fieldsToValidate.push("destination"); break
+            case 2: fieldsToValidate.push("numDays"); break
+            case 3: fieldsToValidate.push("budget"); break
+            case 4: fieldsToValidate.push("ageGroups", "partySize"); break
+            case 5: fieldsToValidate.push("activityLevel"); break
         }
-
         const isValid = await form.trigger(fieldsToValidate)
-        if (isValid) {
-            setStep((prev) => Math.min(prev + 1, STEPS.length))
-        }
+        if (isValid) setStep((prev) => Math.min(prev + 1, STEPS.length))
     }
 
-    const prevStep = () => {
-        setStep((prev) => Math.max(prev - 1, 1))
-    }
+    const prevStep = () => setStep((prev) => Math.max(prev - 1, 1))
 
     async function onSubmit(data: ItineraryInput) {
         setIsLoading(true)
         try {
             const response = await fetch("/api/itinerary/generate", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             })
-
             if (!response.ok) {
                 const text = await response.text()
                 try {
                     const error = JSON.parse(text)
                     throw new Error(error.error || error.message || "Failed to generate itinerary")
-                } catch (e: any) {
-                    throw new Error(e.message || `API returned ${response.status}`)
+                } catch {
+                    throw new Error(`API returned ${response.status}`)
                 }
             }
-
             const result = await response.json()
-            toast.success("Itinerary generated successfully!")
+            toast.success("Your itinerary is ready!")
             router.push(`/itinerary/${result.itineraryId}`)
         } catch (error) {
-            if (error instanceof Error) {
-                toast.error(error.message)
-            } else {
-                toast.error("Something went wrong. Please try again.")
-            }
+            toast.error(error instanceof Error ? error.message : "Something went wrong")
             setIsLoading(false)
         }
     }
 
     const updateTravelerCount = (type: string, delta: number) => {
-        setTravelerCounts(prev => {
+        setTravelerCounts((prev) => {
             const current = prev[type] || 0
             const newValue = Math.max(0, current + delta)
-
-            // Ensure at least one person total
             const otherTotal = Object.entries(prev)
                 .filter(([k]) => k !== type)
                 .reduce((sum, [_, val]) => sum + val, 0)
-
             if (newValue === 0 && otherTotal === 0) return prev
-
             return { ...prev, [type]: newValue }
         })
     }
@@ -175,114 +187,151 @@ export default function CreateItineraryPage() {
     const CurrentIcon = STEPS[step - 1].icon
 
     return (
-        <div className="min-h-screen w-full bg-background relative overflow-hidden flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 via-background to-cyan-500/5 dark:from-teal-900/20 dark:via-background dark:to-cyan-900/20 -z-10" />
-            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20 -z-10" />
+        <div className="min-h-screen bg-background relative">
+            {/* Background */}
+            <div className="absolute inset-0 bg-mesh-warm opacity-50" />
 
+            {/* Loading Overlay */}
             <AnimatePresence>
                 {isLoading && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 dark:bg-gray-950/80 backdrop-blur-md"
+                        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm"
                     >
                         <motion.div
-                            animate={{
-                                scale: [1, 1.2, 1],
-                                rotate: [0, 360],
-                            }}
-                            transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                            }}
-                            className="mb-8 p-6 bg-primary/10 rounded-full"
+                            animate={{ scale: [1, 1.1, 1] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-8"
                         >
-                            <Plane className="w-12 h-12 text-primary" />
+                            <Mountain className="w-10 h-10 text-primary" />
                         </motion.div>
-                        <motion.h2
-                            animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                            className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
+                        <motion.p
+                            key={loadingMessage}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="text-lg text-muted-foreground"
                         >
-                            Crafting your perfect trip to {form.getValues("destination")}...
-                        </motion.h2>
-                        <p className="text-muted-foreground">
-                            Analyzing thousands of reviews and local favorites
-                        </p>
+                            {loadingMessage}
+                        </motion.p>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <Card className="w-full max-w-2xl shadow-2xl border-border/50 bg-card/50 backdrop-blur-xl overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gray-100 dark:bg-gray-800">
-                    <motion.div
-                        className="h-full bg-primary"
-                        initial={{ width: "0%" }}
-                        animate={{ width: `${(step / STEPS.length) * 100}%` }}
-                        transition={{ duration: 0.3 }}
-                    />
+            {/* Header */}
+            <div className="relative z-10 max-w-2xl mx-auto px-4 pt-8 pb-4">
+                <div className="flex items-center justify-between mb-8">
+                    <Link href="/" className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Mountain className="w-4 h-4 text-primary" />
+                        </div>
+                        <span className="font-display text-lg font-semibold">MTA</span>
+                    </Link>
+                    <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                        Cancel
+                    </Link>
                 </div>
 
-                <CardHeader className="text-center space-y-2 pb-8 pt-8">
-                    <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                        {CurrentIcon && <CurrentIcon className="w-6 h-6 text-primary" />}
-                    </div>
-                    <CardTitle className="text-3xl font-bold tracking-tight">
-                        {STEPS[step - 1].title}
-                    </CardTitle>
-                    <CardDescription className="text-lg text-muted-foreground max-w-md mx-auto">
-                        {STEPS[step - 1].description}
-                    </CardDescription>
-                </CardHeader>
+                {/* Progress Dots */}
+                <div className="flex items-center justify-center gap-2 mb-8">
+                    {STEPS.map((s) => (
+                        <div
+                            key={s.id}
+                            className={cn(
+                                "w-2 h-2 rounded-full transition-all duration-300",
+                                s.id === step ? "w-8 bg-primary" : s.id < step ? "bg-primary" : "bg-border"
+                            )}
+                        />
+                    ))}
+                </div>
+            </div>
 
-                <CardContent className="min-h-[300px] flex flex-col justify-center">
+            {/* Content */}
+            <div className="relative z-10 max-w-2xl mx-auto px-4 pb-8">
+                <div className="bg-card border border-border/60 rounded-3xl p-8 shadow-soft">
+                    {/* Step Header */}
+                    <div className="text-center mb-8">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                            <CurrentIcon className="w-6 h-6 text-primary" />
+                        </div>
+                        <h1 className="font-display text-2xl font-semibold tracking-tight mb-2">
+                            {STEPS[step - 1].title}
+                        </h1>
+                        <p className="text-muted-foreground">
+                            {STEPS[step - 1].description}
+                        </p>
+                    </div>
+
+                    {/* Form Content */}
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     key={step}
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="w-full"
+                                    transition={{ duration: 0.2 }}
+                                    className="min-h-[280px] flex flex-col justify-center"
                                 >
+                                    {/* Step 1: Destination */}
                                     {step === 1 && (
                                         <FormField
                                             control={form.control}
                                             name="destination"
                                             render={({ field }) => (
-                                                <FormItem>
+                                                <FormItem className="space-y-4">
                                                     <FormControl>
                                                         <Input
-                                                            placeholder="e.g. Kyoto, Japan"
-                                                            className="h-16 text-xl text-center bg-background/50 border-2 focus-visible:ring-0 focus-visible:border-primary transition-all"
+                                                            placeholder="e.g. Tokyo, Japan"
+                                                            className="h-14 text-lg text-center rounded-2xl"
                                                             autoFocus
                                                             {...field}
                                                             onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') {
-                                                                    e.preventDefault();
-                                                                    nextStep();
+                                                                if (e.key === "Enter") {
+                                                                    e.preventDefault()
+                                                                    nextStep()
                                                                 }
                                                             }}
                                                         />
                                                     </FormControl>
-                                                    <FormMessage className="text-center mt-2" />
+                                                    <FormMessage className="text-center" />
+                                                    <div className="flex flex-wrap justify-center gap-2 pt-4">
+                                                        {["Paris, France", "Bali, Indonesia", "New York, USA", "Rome, Italy"].map((dest) => (
+                                                            <button
+                                                                key={dest}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    field.onChange(dest)
+                                                                    nextStep()
+                                                                }}
+                                                                className="px-4 py-2 text-sm rounded-full bg-secondary hover:bg-secondary/80 transition-colors"
+                                                            >
+                                                                {dest}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </FormItem>
                                             )}
                                         />
                                     )}
 
+                                    {/* Step 2: Duration */}
                                     {step === 2 && (
                                         <FormField
                                             control={form.control}
                                             name="numDays"
                                             render={({ field }) => (
                                                 <FormItem className="space-y-8">
-                                                    <div className="text-center text-6xl font-bold text-primary">
-                                                        {field.value} <span className="text-2xl text-muted-foreground font-normal">Days</span>
+                                                    <div className="text-center">
+                                                        <span className="font-display text-6xl font-semibold text-primary">
+                                                            {field.value}
+                                                        </span>
+                                                        <span className="text-2xl text-muted-foreground ml-2">
+                                                            {field.value === 1 ? "day" : "days"}
+                                                        </span>
                                                     </div>
                                                     <FormControl>
                                                         <Slider
@@ -294,137 +343,131 @@ export default function CreateItineraryPage() {
                                                             className="py-4"
                                                         />
                                                     </FormControl>
-                                                    <FormMessage />
+                                                    <div className="flex justify-between text-sm text-muted-foreground">
+                                                        <span>1 day</span>
+                                                        <span>30 days</span>
+                                                    </div>
                                                 </FormItem>
                                             )}
                                         />
                                     )}
 
+                                    {/* Step 3: Budget */}
                                     {step === 3 && (
                                         <FormField
                                             control={form.control}
                                             name="budget"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    {/* Info banner */}
-                                                    <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
-                                                        <p className="text-sm text-muted-foreground">
-                                                            <span className="font-semibold text-primary">💡 Tip:</span> Costs will be calculated based on your destination. The AI recommends options within your selected budget tier.
-                                                        </p>
-                                                    </div>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        {[
-                                                            { value: "Budget-Friendly", label: "Budget Friendly", icon: "💰", description: "Hostels, street food, public transport, free attractions" },
-                                                            { value: "Moderate", label: "Moderate", icon: "💰💰", description: "Mid-range hotels, local restaurants, mix of transport" },
-                                                            { value: "Luxury", label: "Luxury", icon: "💰💰💰", description: "Premium hotels, fine dining, private transfers" },
-                                                            { value: "No Limit", label: "No Limit", icon: "💳", description: "The best of everything, money is no object" },
-                                                        ].map((option) => (
-                                                            <div
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        {BUDGET_OPTIONS.map((option) => (
+                                                            <button
                                                                 key={option.value}
-                                                                className={cn(
-                                                                    "cursor-pointer rounded-xl border-2 p-6 transition-all hover:border-primary/50 hover:bg-primary/5",
-                                                                    field.value === option.value ? "border-primary bg-primary/10" : "border-border bg-card"
-                                                                )}
+                                                                type="button"
                                                                 onClick={() => {
                                                                     field.onChange(option.value)
                                                                     nextStep()
                                                                 }}
+                                                                className={cn(
+                                                                    "p-4 rounded-2xl border-2 text-left transition-all hover:border-primary/50",
+                                                                    field.value === option.value
+                                                                        ? "border-primary bg-primary/5"
+                                                                        : "border-border hover:bg-secondary/50"
+                                                                )}
                                                             >
-                                                                <div className="text-3xl mb-2">{option.icon}</div>
-                                                                <div className="font-semibold">{option.label}</div>
-                                                                <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
-                                                            </div>
+                                                                <p className="font-semibold mb-1">{option.label}</p>
+                                                                <p className="text-xs text-muted-foreground">{option.description}</p>
+                                                            </button>
                                                         ))}
                                                     </div>
-                                                    <FormMessage />
                                                 </FormItem>
                                             )}
                                         />
                                     )}
 
+                                    {/* Step 4: Travelers */}
                                     {step === 4 && (
-                                        <div className="space-y-6">
-                                            <div className="grid grid-cols-1 gap-4">
-                                                {TRAVELER_TYPES.map((type) => (
-                                                    <div key={type.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card/50">
-                                                        <div>
-                                                            <div className="font-semibold">{type.label}</div>
-                                                            <div className="text-sm text-muted-foreground">{type.description}</div>
-                                                        </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="h-8 w-8 rounded-full"
-                                                                onClick={() => updateTravelerCount(type.id, -1)}
-                                                                disabled={travelerCounts[type.id] === 0}
-                                                            >
-                                                                <Minus className="h-4 w-4" />
-                                                            </Button>
-                                                            <span className="w-8 text-center font-semibold text-lg">
-                                                                {travelerCounts[type.id]}
-                                                            </span>
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="h-8 w-8 rounded-full"
-                                                                onClick={() => updateTravelerCount(type.id, 1)}
-                                                            >
-                                                                <Plus className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
+                                        <div className="space-y-4">
+                                            {TRAVELER_TYPES.map((type) => (
+                                                <div
+                                                    key={type.id}
+                                                    className="flex items-center justify-between p-4 rounded-2xl border border-border bg-background"
+                                                >
+                                                    <div>
+                                                        <p className="font-medium">{type.label}</p>
+                                                        <p className="text-sm text-muted-foreground">{type.description}</p>
                                                     </div>
-                                                ))}
-                                            </div>
-                                            <div className="text-center text-sm text-muted-foreground">
-                                                Total Party Size: <span className="font-bold text-primary">{form.watch("partySize")}</span>
-                                            </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-8 w-8 rounded-full"
+                                                            onClick={() => updateTravelerCount(type.id, -1)}
+                                                            disabled={travelerCounts[type.id] === 0}
+                                                        >
+                                                            <Minus className="h-4 w-4" />
+                                                        </Button>
+                                                        <span className="w-8 text-center font-semibold">
+                                                            {travelerCounts[type.id]}
+                                                        </span>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-8 w-8 rounded-full"
+                                                            onClick={() => updateTravelerCount(type.id, 1)}
+                                                        >
+                                                            <Plus className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <p className="text-center text-sm text-muted-foreground">
+                                                Total: <span className="font-semibold text-foreground">{form.watch("partySize")} travelers</span>
+                                            </p>
                                         </div>
                                     )}
 
+                                    {/* Step 5: Pace */}
                                     {step === 5 && (
                                         <FormField
                                             control={form.control}
                                             name="activityLevel"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        {[
-                                                            { value: "Relaxed", label: "Relaxed", icon: "😌", desc: "Take it easy" },
-                                                            { value: "Moderate", label: "Moderate", icon: "🚶", desc: "Balanced pace" },
-                                                            { value: "Active", label: "Active", icon: "🏃", desc: "Packed schedule" },
-                                                            { value: "Very Active", label: "Very Active", icon: "⚡", desc: "Non-stop action" },
-                                                        ].map((option) => (
-                                                            <div
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        {PACE_OPTIONS.map((option) => (
+                                                            <button
                                                                 key={option.value}
-                                                                className={cn(
-                                                                    "cursor-pointer rounded-xl border-2 p-6 transition-all hover:border-primary/50 hover:bg-primary/5",
-                                                                    field.value === option.value ? "border-primary bg-primary/10" : "border-border bg-card"
-                                                                )}
+                                                                type="button"
                                                                 onClick={() => {
                                                                     field.onChange(option.value)
                                                                     nextStep()
                                                                 }}
+                                                                className={cn(
+                                                                    "p-4 rounded-2xl border-2 text-left transition-all hover:border-primary/50",
+                                                                    field.value === option.value
+                                                                        ? "border-primary bg-primary/5"
+                                                                        : "border-border hover:bg-secondary/50"
+                                                                )}
                                                             >
-                                                                <div className="text-3xl mb-2">{option.icon}</div>
-                                                                <div className="font-semibold">{option.label}</div>
-                                                                <div className="text-sm text-muted-foreground">{option.desc}</div>
-                                                            </div>
+                                                                <p className="font-semibold mb-1">{option.label}</p>
+                                                                <p className="text-xs text-muted-foreground">{option.description}</p>
+                                                            </button>
                                                         ))}
                                                     </div>
-                                                    <FormMessage />
                                                 </FormItem>
                                             )}
                                         />
                                     )}
 
+                                    {/* Step 6: Preferences */}
                                     {step === 6 && (
                                         <div className="space-y-6">
                                             {/* Interests */}
                                             <div>
-                                                <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">Interests (Optional)</h3>
+                                                <p className="label mb-3">Interests</p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {INTEREST_OPTIONS.map((interest) => {
                                                         const current = form.watch("interests")
@@ -435,7 +478,7 @@ export default function CreateItineraryPage() {
                                                                 type="button"
                                                                 onClick={() => {
                                                                     if (isSelected) {
-                                                                        form.setValue("interests", current.filter(i => i !== interest))
+                                                                        form.setValue("interests", current.filter((i) => i !== interest))
                                                                     } else {
                                                                         form.setValue("interests", [...current, interest])
                                                                     }
@@ -444,7 +487,7 @@ export default function CreateItineraryPage() {
                                                                     "px-4 py-2 rounded-full text-sm font-medium transition-all border",
                                                                     isSelected
                                                                         ? "bg-primary text-primary-foreground border-primary"
-                                                                        : "bg-card border-border hover:border-primary/50"
+                                                                        : "bg-background border-border hover:border-primary/50"
                                                                 )}
                                                             >
                                                                 {interest}
@@ -454,9 +497,9 @@ export default function CreateItineraryPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Dietary Restrictions */}
+                                            {/* Dietary */}
                                             <div>
-                                                <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">Dietary Needs (Optional)</h3>
+                                                <p className="label mb-3">Dietary Needs</p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {DIETARY_OPTIONS.map((diet) => {
                                                         const current = form.watch("dietaryRestrictions")
@@ -467,7 +510,7 @@ export default function CreateItineraryPage() {
                                                                 type="button"
                                                                 onClick={() => {
                                                                     if (isSelected) {
-                                                                        form.setValue("dietaryRestrictions", current.filter(d => d !== diet))
+                                                                        form.setValue("dietaryRestrictions", current.filter((d) => d !== diet))
                                                                     } else {
                                                                         form.setValue("dietaryRestrictions", [...current, diet])
                                                                     }
@@ -475,8 +518,8 @@ export default function CreateItineraryPage() {
                                                                 className={cn(
                                                                     "px-4 py-2 rounded-full text-sm font-medium transition-all border",
                                                                     isSelected
-                                                                        ? "bg-green-600 text-white border-green-600"
-                                                                        : "bg-card border-border hover:border-green-500/50"
+                                                                        ? "bg-primary text-primary-foreground border-primary"
+                                                                        : "bg-background border-border hover:border-primary/50"
                                                                 )}
                                                             >
                                                                 {diet}
@@ -486,9 +529,9 @@ export default function CreateItineraryPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Accessibility Needs */}
+                                            {/* Accessibility */}
                                             <div>
-                                                <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">Accessibility (Optional)</h3>
+                                                <p className="label mb-3">Accessibility</p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {ACCESSIBILITY_OPTIONS.map((need) => {
                                                         const current = form.watch("accessibilityNeeds")
@@ -499,7 +542,7 @@ export default function CreateItineraryPage() {
                                                                 type="button"
                                                                 onClick={() => {
                                                                     if (isSelected) {
-                                                                        form.setValue("accessibilityNeeds", current.filter(n => n !== need))
+                                                                        form.setValue("accessibilityNeeds", current.filter((n) => n !== need))
                                                                     } else {
                                                                         form.setValue("accessibilityNeeds", [...current, need])
                                                                     }
@@ -507,8 +550,8 @@ export default function CreateItineraryPage() {
                                                                 className={cn(
                                                                     "px-4 py-2 rounded-full text-sm font-medium transition-all border",
                                                                     isSelected
-                                                                        ? "bg-blue-600 text-white border-blue-600"
-                                                                        : "bg-card border-border hover:border-blue-500/50"
+                                                                        ? "bg-primary text-primary-foreground border-primary"
+                                                                        : "bg-background border-border hover:border-primary/50"
                                                                 )}
                                                             >
                                                                 {need}
@@ -519,45 +562,44 @@ export default function CreateItineraryPage() {
                                             </div>
 
                                             <p className="text-center text-sm text-muted-foreground">
-                                                Skip if none apply - you can always adjust later!
+                                                All preferences are optional
                                             </p>
                                         </div>
                                     )}
                                 </motion.div>
                             </AnimatePresence>
+
+                            {/* Navigation */}
+                            <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={prevStep}
+                                    disabled={step === 1 || isLoading}
+                                    className={cn("gap-2", step === 1 && "invisible")}
+                                >
+                                    <ArrowLeft className="w-4 h-4" /> Back
+                                </Button>
+
+                                {step < STEPS.length ? (
+                                    <Button type="button" onClick={nextStep} className="gap-2 rounded-full px-6">
+                                        Next <ArrowRight className="w-4 h-4" />
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="gap-2 rounded-full px-6"
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                        Generate Itinerary
+                                    </Button>
+                                )}
+                            </div>
                         </form>
                     </Form>
-                </CardContent>
-
-                <CardFooter className="flex justify-between pt-8">
-                    <Button
-                        variant="ghost"
-                        onClick={prevStep}
-                        disabled={step === 1 || isLoading}
-                        className={cn("gap-2", step === 1 && "invisible")}
-                    >
-                        <ArrowLeft className="w-4 h-4" /> Back
-                    </Button>
-
-                    {step < STEPS.length ? (
-                        <Button onClick={nextStep} className="gap-2 bg-primary hover:bg-primary/90">
-                            Next <ArrowRight className="w-4 h-4" />
-                        </Button>
-                    ) : (
-                        <Button
-                            onClick={form.handleSubmit(onSubmit)}
-                            disabled={isLoading}
-                            className="gap-2 bg-gradient-to-r from-primary to-teal-600 hover:from-primary/90 hover:to-teal-600/90"
-                        >
-                            {isLoading ? (
-                                <>Generating...</>
-                            ) : (
-                                <>Generate Itinerary <Sparkles className="w-4 h-4" /></>
-                            )}
-                        </Button>
-                    )}
-                </CardFooter>
-            </Card>
+                </div>
+            </div>
         </div>
     )
 }

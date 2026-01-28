@@ -1,64 +1,107 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import * as React from "react"
+import Link from "next/link"
+import { motion } from "framer-motion"
+import { ArrowRight, Sparkles } from "lucide-react"
 
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button"
 
 export function Hero() {
     return (
-        <section className="flex flex-col items-center justify-center text-center py-32 px-4 relative z-10 overflow-hidden">
+        <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+            {/* Background Gradient Mesh */}
+            <div className="absolute inset-0 bg-mesh-warm" />
+
+            {/* Subtle Grain Overlay */}
+            <div className="absolute inset-0 bg-grain" />
+
+            {/* Floating Decorative Elements */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-8 backdrop-blur-sm"
-            >
-                <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
-                Now with GPT-4o Integration
-            </motion.div>
-
-            <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-6xl md:text-8xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6 max-w-4xl leading-tight"
-            >
-                Plan Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-teal-600">Perfect Trip</span> with AI
-            </motion.h1>
-
-            <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-xl md:text-2xl text-muted-foreground max-w-2xl mb-10 leading-relaxed"
-            >
-                Generate personalized itineraries in seconds. Choose destinations, set dates, and let our AI craft the ultimate travel plan for you.
-            </motion.p>
-
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                transition={{ duration: 2 }}
+                className="absolute top-1/4 left-[10%] w-64 h-64 rounded-full bg-primary/10 blur-3xl"
+            />
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex flex-col sm:flex-row gap-4 w-full justify-center"
-            >
-                <Link href="/create" passHref>
-                    <Button size="lg" className="rounded-full h-14 px-8 text-lg shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
-                        Start Planning Free
-                    </Button>
-                </Link>
-                <Link href="/demo" passHref>
-                    <Button variant="outline" size="lg" className="rounded-full h-14 px-8 text-lg backdrop-blur-sm bg-background/50 hover:bg-background/80 transition-all">
-                        Watch Demo
-                    </Button>
-                </Link>
-            </motion.div>
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.3 }}
+                transition={{ duration: 2, delay: 0.5 }}
+                className="absolute bottom-1/4 right-[10%] w-96 h-96 rounded-full bg-sky-accent/10 blur-3xl"
+            />
 
-            {/* Bottom gradient mask for seamless transition */}
+            {/* Content */}
+            <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                {/* Badge */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8"
+                >
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-primary">
+                        AI-Powered Trip Planning
+                    </span>
+                </motion.div>
+
+                {/* Headline */}
+                <motion.h1
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="heading-1 mb-6"
+                >
+                    Plan Your Perfect
+                    <br />
+                    <span className="text-primary">Adventure</span>
+                </motion.h1>
+
+                {/* Subheadline */}
+                <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="body-lg text-muted-foreground max-w-2xl mx-auto mb-10"
+                >
+                    Create personalized travel itineraries in seconds. Our AI crafts the perfect trip based on your preferences, budget, and travel style.
+                </motion.p>
+
+                {/* CTAs */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                    className="flex flex-col sm:flex-row gap-4 justify-center"
+                >
+                    <Button asChild size="xl" className="rounded-full group">
+                        <Link href="/create">
+                            Create Itinerary
+                            <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="xl" className="rounded-full">
+                        <Link href="/dashboard">
+                            View Dashboard
+                        </Link>
+                    </Button>
+                </motion.div>
+
+                {/* Trust Indicator */}
+                <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                    className="mt-12 text-sm text-muted-foreground"
+                >
+                    Trusted by travelers planning trips to <span className="text-foreground font-medium">190+ countries</span>
+                </motion.p>
+            </div>
+
+            {/* Bottom Fade */}
             <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
         </section>
-    );
+    )
 }
 
-export default Hero;
+export default Hero

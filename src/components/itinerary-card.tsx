@@ -1,15 +1,9 @@
-import Link from "next/link"
-import { CalendarDays, MapPin, Users, Wallet } from "lucide-react"
-import { format } from "date-fns"
+"use client"
 
-import { Button } from "@/components/ui/button"
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
+import Link from "next/link"
+import { CalendarDays, MapPin, Users, Wallet, ArrowRight } from "lucide-react"
+import { format } from "date-fns"
+import { motion } from "framer-motion"
 
 interface ItineraryCardProps {
     itinerary: {
@@ -22,54 +16,115 @@ interface ItineraryCardProps {
     }
 }
 
+// Generate a deterministic gradient based on destination name
+function getDestinationGradient(destination: string): string {
+    const gradients = [
+        "from-emerald-500 to-teal-600",
+        "from-blue-500 to-indigo-600",
+        "from-orange-400 to-rose-500",
+        "from-violet-500 to-purple-600",
+        "from-cyan-500 to-blue-600",
+        "from-amber-400 to-orange-500",
+        "from-teal-400 to-cyan-600",
+        "from-rose-400 to-pink-600",
+    ]
+
+    // Simple hash based on destination string
+    let hash = 0
+    for (let i = 0; i < destination.length; i++) {
+        hash = destination.charCodeAt(i) + ((hash << 5) - hash)
+    }
+
+    return gradients[Math.abs(hash) % gradients.length]
+}
+
+// Get first letter of destination for avatar
+function getDestinationInitial(destination: string): string {
+    return destination.charAt(0).toUpperCase()
+}
+
 export function ItineraryCard({ itinerary }: ItineraryCardProps) {
+    const gradient = getDestinationGradient(itinerary.destination)
+    const initial = getDestinationInitial(itinerary.destination)
+
     return (
-        <Card className="flex flex-col h-full hover:shadow-xl transition-all duration-300 border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden group hover:-translate-y-1">
-            <div className="h-32 bg-gradient-to-br from-primary/20 to-teal-600/20 relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <MapPin className="h-12 w-12 text-primary/40 group-hover:text-primary/60 transition-colors" />
-                </div>
-            </div>
-            <CardHeader className="relative -mt-12 pt-0 px-6">
-                <div className="bg-card p-4 rounded-xl shadow-sm border border-border/50">
-                    <CardTitle className="text-xl font-bold line-clamp-1">
-                        {itinerary.destination}
-                    </CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-6 px-6">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                        <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Duration</span>
-                        <div className="flex items-center gap-2 text-sm font-semibold">
-                            <CalendarDays className="h-4 w-4 text-primary" />
-                            <span>{itinerary.numDays} Days</span>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+        >
+            <Link href={`/itinerary/${itinerary.id}`} className="group block">
+                <article className="bg-card border border-border/60 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-elevated hover:border-primary/20 hover:-translate-y-1">
+                    {/* Gradient Header */}
+                    <div className={`relative h-32 bg-gradient-to-br ${gradient} overflow-hidden`}>
+                        {/* Pattern overlay */}
+                        <div className="absolute inset-0 opacity-10">
+                            <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                <pattern id={`pattern-${itinerary.id}`} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                    <circle cx="10" cy="10" r="1.5" fill="white" />
+                                </pattern>
+                                <rect x="0" y="0" width="100" height="100" fill={`url(#pattern-${itinerary.id})`} />
+                            </svg>
+                        </div>
+
+                        {/* Large initial */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <span className="text-6xl font-display font-bold text-white/20">
+                                {initial}
+                            </span>
+                        </div>
+
+                        {/* Destination Name Overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/30 to-transparent">
+                            <div className="flex items-center gap-2 text-white">
+                                <MapPin className="w-4 h-4" />
+                                <h3 className="font-display text-lg font-semibold tracking-tight line-clamp-1">
+                                    {itinerary.destination}
+                                </h3>
+                            </div>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Travelers</span>
-                        <div className="flex items-center gap-2 text-sm font-semibold">
-                            <Users className="h-4 w-4 text-primary" />
-                            <span>{itinerary.partySize} People</span>
+
+                    {/* Content */}
+                    <div className="p-4">
+                        {/* Meta Grid */}
+                        <div className="grid grid-cols-3 gap-3 mb-4">
+                            <div>
+                                <p className="label mb-0.5">Duration</p>
+                                <div className="flex items-center gap-1.5 text-sm font-medium">
+                                    <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                                    <span>{itinerary.numDays} days</span>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="label mb-0.5">Travelers</p>
+                                <div className="flex items-center gap-1.5 text-sm font-medium">
+                                    <Users className="w-3.5 h-3.5 text-primary" />
+                                    <span>{itinerary.partySize}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="label mb-0.5">Budget</p>
+                                <div className="flex items-center gap-1.5 text-sm font-medium">
+                                    <Wallet className="w-3.5 h-3.5 text-primary" />
+                                    <span className="truncate">{itinerary.budget}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-3 border-t border-border/60">
+                            <p className="text-xs text-muted-foreground">
+                                {format(new Date(itinerary.createdAt), "MMM d, yyyy")}
+                            </p>
+                            <span className="text-sm font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                                View
+                                <ArrowRight className="w-3.5 h-3.5" />
+                            </span>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Budget</span>
-                        <div className="flex items-center gap-2 text-sm font-semibold">
-                            <Wallet className="h-4 w-4 text-primary" />
-                            <span>{itinerary.budget}</span>
-                        </div>
-                    </div>
-                </div>
-                <div className="text-xs text-muted-foreground border-t border-border/50 pt-4">
-                    Created on {format(new Date(itinerary.createdAt), "MMMM do, yyyy")}
-                </div>
-            </CardContent>
-            <CardFooter className="px-6 pb-6">
-                <Button asChild className="w-full shadow-md group-hover:shadow-lg transition-all">
-                    <Link href={`/itinerary/${itinerary.id}`}>View Itinerary</Link>
-                </Button>
-            </CardFooter>
-        </Card>
+                </article>
+            </Link>
+        </motion.div>
     )
 }
