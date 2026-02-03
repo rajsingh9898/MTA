@@ -111,18 +111,18 @@ function generateMockItinerary(destination: string, numDays: number, budget: str
       }
     ],
     transportation: "Public transit is convenient and affordable (approx ₹200/day).",
-    dailyCost: budget === "Budget-Friendly" ? "₹2000-3000" : budget === "Luxury" ? "₹10000+" : "₹4000-6000"
+    dailyCost: budget === "Economy" ? "₹2000-3000" : budget === "Luxury" ? "₹10000+" : "₹4000-6000"
   }));
 
   return {
     overview: {
       destination,
       duration: `${numDays} Days`,
-      totalEstimatedCost: budget === "Budget-Friendly" ? `₹${numDays * 3000}` : budget === "Luxury" ? `₹${numDays * 15000}` : `₹${numDays * 6000}`
+      totalEstimatedCost: budget === "Economy" ? `₹${numDays * 3000}` : budget === "Luxury" ? `₹${numDays * 15000}` : `₹${numDays * 6000}`
     },
     days,
     summary: {
-      totalEstimatedCost: budget === "Budget-Friendly" ? `₹${numDays * 3000}` : budget === "Luxury" ? `₹${numDays * 15000}` : `₹${numDays * 6000}`,
+      totalEstimatedCost: budget === "Economy" ? `₹${numDays * 3000}` : budget === "Luxury" ? `₹${numDays * 15000}` : `₹${numDays * 6000}`,
       totalActivities: numDays * 3,
       keyHighlights: ["Historic City Center", "Local Cuisine Tasting", "Scenic Views"]
     }
@@ -204,7 +204,7 @@ export async function POST(req: Request) {
 
         // Budget tier context for destination-aware pricing
         const budgetTierContext = {
-          "Budget-Friendly": "hostels/budget stays, street food, public transport, free attractions",
+          "Economy": "hostels/budget stays, street food, public transport, free attractions",
           "Moderate": "mid-range hotels, local restaurants, mix of transport options",
           "Luxury": "premium hotels, fine dining, private transfers, exclusive experiences",
           "No Limit": "the best of everything available"

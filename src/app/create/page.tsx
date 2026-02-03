@@ -48,11 +48,11 @@ const TRAVELER_TYPES = [
 ] as const
 
 const BUDGET_OPTIONS = [
-    { value: "Budget-Friendly", label: "Budget", description: "Hostels, street food, public transport" },
+    { value: "Economy", label: "Economy", description: "Hostels, street food, public transport" },
     { value: "Moderate", label: "Moderate", description: "Mid-range hotels, local restaurants" },
     { value: "Luxury", label: "Luxury", description: "Premium hotels, fine dining" },
     { value: "No Limit", label: "No Limit", description: "The best of everything" },
-]
+] as const
 
 const PACE_OPTIONS = [
     { value: "Relaxed", label: "Relaxed", description: "Take it slow, plenty of rest" },
@@ -127,7 +127,9 @@ export default function CreateItineraryPage() {
     }
 
     if (status === "unauthenticated") {
-        router.push("/login")
+        useEffect(() => {
+            router.push("/login")
+        }, [router])
         return null
     }
 
@@ -187,9 +189,20 @@ export default function CreateItineraryPage() {
     const CurrentIcon = STEPS[step - 1].icon
 
     return (
-        <div className="min-h-screen bg-background relative">
-            {/* Background */}
-            <div className="absolute inset-0 bg-mesh-warm opacity-50" />
+        <div className="min-h-screen relative">
+            {/* Travel-themed background */}
+            <div className="fixed inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
+            <div 
+                className="fixed inset-0 opacity-[0.04]"
+                style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2378716C' stroke-width='0.5' fill-opacity='0.1'%3E%3Cpath d='M100 200 Q200 150 300 200 T500 200 Q600 150 700 200'/%3E%3Cpath d='M150 180 Q250 130 350 180 T550 180'/%3E%3Cpath d='M200 220 Q300 270 400 220 T600 220'/%3E%3Ccircle cx='200' cy='180' r='3' fill='%2378716C'/%3E%3Ccircle cx='400' cy='200' r='3' fill='%2378716C'/%3E%3Ccircle cx='600' cy='180' r='3' fill='%2378716C'/%3E%3C/g%3E%3C/svg%3E")`,
+                    backgroundSize: '800px 400px',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'repeat',
+                }}
+            />
+
+            <div className="relative z-10">
 
             {/* Loading Overlay */}
             <AnimatePresence>
@@ -599,6 +612,7 @@ export default function CreateItineraryPage() {
                         </form>
                     </Form>
                 </div>
+            </div>
             </div>
         </div>
     )

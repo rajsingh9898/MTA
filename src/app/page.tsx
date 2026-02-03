@@ -19,8 +19,8 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="py-24 lg:py-32 relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-mesh-warm" />
+        {/* Premium Background */}
+        <div className="absolute inset-0 bg-hero-premium" />
         <div className="absolute inset-0 bg-grain" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -32,13 +32,13 @@ export default function Home() {
             Join thousands of travelers who trust MTA to create unforgettable journeys. Your perfect trip is just a few clicks away.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="xl" className="rounded-full group">
+            <Button asChild size="xl" className="rounded-full group shadow-premium-medium hover:shadow-premium-strong transition-shadow">
               <Link href="/create">
                 Create Your Itinerary
                 <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="xl" className="rounded-full">
+            <Button asChild variant="outline" size="xl" className="rounded-full glass-card hover:shadow-premium-medium transition-shadow">
               <Link href="/dashboard">
                 View Dashboard
               </Link>

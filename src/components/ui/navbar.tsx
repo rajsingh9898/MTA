@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useTheme } from "next-themes"
 import { usePathname } from "next/navigation"
-import { Sun, Moon, Menu, X, Mountain } from "lucide-react"
+import { useSession } from "next-auth/react"
+import { Mountain, Menu, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
@@ -14,19 +14,29 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
+import { ProfileTest } from "@/components/ui/profile-test"
 import { cn } from "@/lib/utils"
 
-const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/create", label: "Create Trip" },
-]
-
 export function Navbar() {
-    const { setTheme, theme } = useTheme()
     const pathname = usePathname()
+    const { data: session } = useSession()
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
     const [scrolled, setScrolled] = React.useState(false)
+
+    // Conditionally render navigation links based on authentication
+    const navLinks = React.useMemo(() => {
+        const links = [
+            { href: "/", label: "Home" },
+            { href: "/create", label: "Create Trip" },
+        ]
+        
+        // Only add Dashboard link if user is authenticated
+        if (session) {
+            links.splice(1, 0, { href: "/dashboard", label: "Dashboard" })
+        }
+        
+        return links
+    }, [session])
 
     React.useEffect(() => {
         const handleScroll = () => {
@@ -88,27 +98,8 @@ export function Navbar() {
 
                         {/* Right Actions */}
                         <div className="flex items-center gap-2">
-                            {/* Theme Toggle */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="rounded-full">
-                                        <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                                        <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                                        <span className="sr-only">Toggle theme</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="min-w-[120px]">
-                                    <DropdownMenuItem onClick={() => setTheme("light")}>
-                                        Light
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setTheme("dark")}>
-                                        Dark
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setTheme("system")}>
-                                        System
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            {/* Profile Dropdown */}
+                            <ProfileTest />
 
                             {/* CTA Button - Desktop */}
                             <Button asChild size="sm" className="hidden md:flex rounded-full">

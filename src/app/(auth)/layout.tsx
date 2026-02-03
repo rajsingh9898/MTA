@@ -105,11 +105,23 @@ export default function AuthLayout({
             </div>
 
             {/* Right Panel - Form */}
-            <div className="flex-1 flex items-center justify-center p-6 lg:p-10 bg-background relative">
+            <div className="flex-1 flex items-center justify-center p-6 lg:p-10 relative">
+                {/* Travel-themed background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
+                <div 
+                    className="absolute inset-0 opacity-[0.04]"
+                    style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2378716C' stroke-width='0.5' fill-opacity='0.1'%3E%3Cpath d='M100 200 Q200 150 300 200 T500 200 Q600 150 700 200'/%3E%3Cpath d='M150 180 Q250 130 350 180 T550 180'/%3E%3Cpath d='M200 220 Q300 270 400 220 T600 220'/%3E%3Ccircle cx='200' cy='180' r='3' fill='%2378716C'/%3E%3Ccircle cx='400' cy='200' r='3' fill='%2378716C'/%3E%3Ccircle cx='600' cy='180' r='3' fill='%2378716C'/%3E%3C/g%3E%3C/svg%3E")`,
+                        backgroundSize: '800px 400px',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'repeat',
+                    }}
+                />
+                
                 {/* Mobile Logo */}
                 <Link
                     href="/"
-                    className="absolute top-6 left-6 flex items-center gap-2 lg:hidden"
+                    className="absolute top-6 left-6 flex items-center gap-2 lg:hidden z-10"
                 >
                     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
                         <Mountain className="w-4 h-4 text-primary" />
@@ -119,8 +131,7 @@ export default function AuthLayout({
                     </span>
                 </Link>
 
-                {/* Form Container */}
-                <div className="w-full max-w-md">
+                <div className="relative z-10 w-full max-w-md">
                     {children}
                 </div>
             </div>

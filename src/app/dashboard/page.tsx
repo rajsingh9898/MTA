@@ -31,14 +31,27 @@ export default async function DashboardPage() {
     const firstName = session.user.email?.split("@")[0] || "Traveler"
 
     return (
-        <div className="min-h-screen bg-background">
-            <Navbar />
+        <div className="min-h-screen relative">
+            {/* Travel-themed background */}
+            <div className="fixed inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
+            <div 
+                className="fixed inset-0 opacity-[0.04]"
+                style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2378716C' stroke-width='0.5' fill-opacity='0.1'%3E%3Cpath d='M100 200 Q200 150 300 200 T500 200 Q600 150 700 200'/%3E%3Cpath d='M150 180 Q250 130 350 180 T550 180'/%3E%3Cpath d='M200 220 Q300 270 400 220 T600 220'/%3E%3Ccircle cx='200' cy='180' r='3' fill='%2378716C'/%3E%3Ccircle cx='400' cy='200' r='3' fill='%2378716C'/%3E%3Ccircle cx='600' cy='180' r='3' fill='%2378716C'/%3E%3C/g%3E%3C/svg%3E")`,
+                    backgroundSize: '800px 400px',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'repeat',
+                }}
+            />
+            
+            <div className="relative z-10">
+                <Navbar />
 
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
                     <div>
-                        <p className="text-muted-foreground mb-1">Welcome back,</p>
+                        <p className="text-muted-foreground mb-1">Welcome</p>
                         <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight">
                             {firstName}
                         </h1>
@@ -117,6 +130,7 @@ export default async function DashboardPage() {
                         </div>
                     </>
                 )}
+                </div>
             </div>
         </div>
     )

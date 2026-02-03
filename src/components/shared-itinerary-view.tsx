@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { ExportPdfButton } from "@/components/export-pdf-button"
 
 interface Activity {
     timeSlot: string
@@ -78,7 +79,20 @@ export function SharedItineraryView({ itinerary, data, imageUrl, photographer, p
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen relative">
+            {/* Travel-themed background */}
+            <div className="fixed inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
+            <div 
+                className="fixed inset-0 opacity-[0.04]"
+                style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2378716C' stroke-width='0.5' fill-opacity='0.1'%3E%3Cpath d='M100 200 Q200 150 300 200 T500 200 Q600 150 700 200'/%3E%3Cpath d='M150 180 Q250 130 350 180 T550 180'/%3E%3Cpath d='M200 220 Q300 270 400 220 T600 220'/%3E%3Ccircle cx='200' cy='180' r='3' fill='%2378716C'/%3E%3Ccircle cx='400' cy='200' r='3' fill='%2378716C'/%3E%3Ccircle cx='600' cy='180' r='3' fill='%2378716C'/%3E%3C/g%3E%3C/svg%3E")`,
+                    backgroundSize: '800px 400px',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'repeat',
+                }}
+            />
+            
+            <div className="relative z-10">
             {/* Shared Banner */}
             <div className="bg-primary/10 border-b border-primary/20">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
@@ -164,6 +178,22 @@ export function SharedItineraryView({ itinerary, data, imageUrl, photographer, p
 
             {/* Main Content */}
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                {/* Actions Bar */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                    className="flex flex-wrap items-center gap-3 mb-10 pb-6 border-b border-border"
+                >
+                    <ExportPdfButton data={data} />
+                    <div className="flex-1" />
+                    <Button asChild size="sm" variant="outline" className="rounded-full">
+                        <Link href="/create">
+                            Create Your Own Trip
+                        </Link>
+                    </Button>
+                </motion.div>
+
                 {/* Overview Cards */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -314,13 +344,8 @@ export function SharedItineraryView({ itinerary, data, imageUrl, photographer, p
                     <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                         Create your own personalized itinerary with AI-powered recommendations tailored just for you.
                     </p>
-                    <Button asChild size="lg" className="rounded-full group">
-                        <Link href="/create">
-                            Create Your Own Trip
-                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                    </Button>
                 </motion.div>
+            </div>
             </div>
         </div>
     )
