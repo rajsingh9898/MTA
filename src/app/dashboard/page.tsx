@@ -5,7 +5,7 @@ import { Plus, Map as MapIcon, Compass } from "lucide-react"
 
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { Itinerary } from "@prisma/client"
+import type { Itinerary } from "@prisma/client"
 import { Button } from "@/components/ui/button"
 import { ItineraryCard } from "@/components/itinerary-card"
 import { Navbar } from "@/components/ui/navbar"
