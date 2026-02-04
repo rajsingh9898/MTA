@@ -21,6 +21,7 @@ import {
     Minus,
     Plus,
     Mountain,
+    Home,
     Loader2
 } from "lucide-react"
 
@@ -42,7 +43,7 @@ const STEPS = [
 
 const TRAVELER_TYPES = [
     { id: "Adults", label: "Adults", description: "18-64 years" },
-    { id: "Children", label: "Children", description: "0-12 years" },
+    { id: "Children", label: "Children", description: "3-12 years" },
     { id: "Teens", label: "Teens", description: "13-17 years" },
     { id: "Seniors", label: "Seniors", description: "65+ years" },
 ] as const
@@ -192,7 +193,7 @@ export default function CreateItineraryPage() {
         <div className="min-h-screen relative">
             {/* Travel-themed background */}
             <div className="fixed inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
-            <div 
+            <div
                 className="fixed inset-0 opacity-[0.04]"
                 style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2378716C' stroke-width='0.5' fill-opacity='0.1'%3E%3Cpath d='M100 200 Q200 150 300 200 T500 200 Q600 150 700 200'/%3E%3Cpath d='M150 180 Q250 130 350 180 T550 180'/%3E%3Cpath d='M200 220 Q300 270 400 220 T600 220'/%3E%3Ccircle cx='200' cy='180' r='3' fill='%2378716C'/%3E%3Ccircle cx='400' cy='200' r='3' fill='%2378716C'/%3E%3Ccircle cx='600' cy='180' r='3' fill='%2378716C'/%3E%3C/g%3E%3C/svg%3E")`,
@@ -204,415 +205,415 @@ export default function CreateItineraryPage() {
 
             <div className="relative z-10">
 
-            {/* Loading Overlay */}
-            <AnimatePresence>
-                {isLoading && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm"
-                    >
+                {/* Loading Overlay */}
+                <AnimatePresence>
+                    {isLoading && (
                         <motion.div
-                            animate={{ scale: [1, 1.1, 1] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                            className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-8"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm"
                         >
-                            <Mountain className="w-10 h-10 text-primary" />
+                            <motion.div
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-8"
+                            >
+                                <Mountain className="w-10 h-10 text-primary" />
+                            </motion.div>
+                            <motion.p
+                                key={loadingMessage}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="text-lg text-muted-foreground"
+                            >
+                                {loadingMessage}
+                            </motion.p>
                         </motion.div>
-                        <motion.p
-                            key={loadingMessage}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="text-lg text-muted-foreground"
-                        >
-                            {loadingMessage}
-                        </motion.p>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>
 
-            {/* Header */}
-            <div className="relative z-10 max-w-2xl mx-auto px-4 pt-8 pb-4">
-                <div className="flex items-center justify-between mb-8">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Mountain className="w-4 h-4 text-primary" />
-                        </div>
-                        <span className="font-display text-lg font-semibold">MTA</span>
-                    </Link>
-                    <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                        Cancel
-                    </Link>
-                </div>
-
-                {/* Progress Dots */}
-                <div className="flex items-center justify-center gap-2 mb-8">
-                    {STEPS.map((s) => (
-                        <div
-                            key={s.id}
-                            className={cn(
-                                "w-2 h-2 rounded-full transition-all duration-300",
-                                s.id === step ? "w-8 bg-primary" : s.id < step ? "bg-primary" : "bg-border"
-                            )}
-                        />
-                    ))}
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="relative z-10 max-w-2xl mx-auto px-4 pb-8">
-                <div className="bg-card border border-border/60 rounded-3xl p-8 shadow-soft">
-                    {/* Step Header */}
-                    <div className="text-center mb-8">
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                            <CurrentIcon className="w-6 h-6 text-primary" />
-                        </div>
-                        <h1 className="font-display text-2xl font-semibold tracking-tight mb-2">
-                            {STEPS[step - 1].title}
-                        </h1>
-                        <p className="text-muted-foreground">
-                            {STEPS[step - 1].description}
-                        </p>
+                {/* Header */}
+                <div className="relative z-10 max-w-2xl mx-auto px-4 pt-8 pb-4">
+                    <div className="flex items-center justify-between mb-8">
+                        <Link href="/" className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Home className="w-4 h-4 text-primary" />
+                            </div>
+                            <span className="font-display text-lg font-semibold">MTA</span>
+                        </Link>
+                        <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                            Cancel
+                        </Link>
                     </div>
 
-                    {/* Form Content */}
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)}>
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={step}
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="min-h-[280px] flex flex-col justify-center"
-                                >
-                                    {/* Step 1: Destination */}
-                                    {step === 1 && (
-                                        <FormField
-                                            control={form.control}
-                                            name="destination"
-                                            render={({ field }) => (
-                                                <FormItem className="space-y-4">
-                                                    <FormControl>
-                                                        <Input
-                                                            placeholder="e.g. Tokyo, Japan"
-                                                            className="h-14 text-lg text-center rounded-2xl"
-                                                            autoFocus
-                                                            {...field}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === "Enter") {
-                                                                    e.preventDefault()
-                                                                    nextStep()
-                                                                }
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage className="text-center" />
-                                                    <div className="flex flex-wrap justify-center gap-2 pt-4">
-                                                        {["Paris, France", "Bali, Indonesia", "New York, USA", "Rome, Italy"].map((dest) => (
-                                                            <button
-                                                                key={dest}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    field.onChange(dest)
-                                                                    nextStep()
-                                                                }}
-                                                                className="px-4 py-2 text-sm rounded-full bg-secondary hover:bg-secondary/80 transition-colors"
-                                                            >
-                                                                {dest}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    )}
-
-                                    {/* Step 2: Duration */}
-                                    {step === 2 && (
-                                        <FormField
-                                            control={form.control}
-                                            name="numDays"
-                                            render={({ field }) => (
-                                                <FormItem className="space-y-8">
-                                                    <div className="text-center">
-                                                        <span className="font-display text-6xl font-semibold text-primary">
-                                                            {field.value}
-                                                        </span>
-                                                        <span className="text-2xl text-muted-foreground ml-2">
-                                                            {field.value === 1 ? "day" : "days"}
-                                                        </span>
-                                                    </div>
-                                                    <FormControl>
-                                                        <Slider
-                                                            min={1}
-                                                            max={30}
-                                                            step={1}
-                                                            value={[field.value]}
-                                                            onValueChange={(vals) => field.onChange(vals[0])}
-                                                            className="py-4"
-                                                        />
-                                                    </FormControl>
-                                                    <div className="flex justify-between text-sm text-muted-foreground">
-                                                        <span>1 day</span>
-                                                        <span>30 days</span>
-                                                    </div>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    )}
-
-                                    {/* Step 3: Budget */}
-                                    {step === 3 && (
-                                        <FormField
-                                            control={form.control}
-                                            name="budget"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="grid grid-cols-2 gap-3">
-                                                        {BUDGET_OPTIONS.map((option) => (
-                                                            <button
-                                                                key={option.value}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    field.onChange(option.value)
-                                                                    nextStep()
-                                                                }}
-                                                                className={cn(
-                                                                    "p-4 rounded-2xl border-2 text-left transition-all hover:border-primary/50",
-                                                                    field.value === option.value
-                                                                        ? "border-primary bg-primary/5"
-                                                                        : "border-border hover:bg-secondary/50"
-                                                                )}
-                                                            >
-                                                                <p className="font-semibold mb-1">{option.label}</p>
-                                                                <p className="text-xs text-muted-foreground">{option.description}</p>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    )}
-
-                                    {/* Step 4: Travelers */}
-                                    {step === 4 && (
-                                        <div className="space-y-4">
-                                            {TRAVELER_TYPES.map((type) => (
-                                                <div
-                                                    key={type.id}
-                                                    className="flex items-center justify-between p-4 rounded-2xl border border-border bg-background"
-                                                >
-                                                    <div>
-                                                        <p className="font-medium">{type.label}</p>
-                                                        <p className="text-sm text-muted-foreground">{type.description}</p>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-8 w-8 rounded-full"
-                                                            onClick={() => updateTravelerCount(type.id, -1)}
-                                                            disabled={travelerCounts[type.id] === 0}
-                                                        >
-                                                            <Minus className="h-4 w-4" />
-                                                        </Button>
-                                                        <span className="w-8 text-center font-semibold">
-                                                            {travelerCounts[type.id]}
-                                                        </span>
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-8 w-8 rounded-full"
-                                                            onClick={() => updateTravelerCount(type.id, 1)}
-                                                        >
-                                                            <Plus className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            <p className="text-center text-sm text-muted-foreground">
-                                                Total: <span className="font-semibold text-foreground">{form.watch("partySize")} travelers</span>
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Step 5: Pace */}
-                                    {step === 5 && (
-                                        <FormField
-                                            control={form.control}
-                                            name="activityLevel"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="grid grid-cols-2 gap-3">
-                                                        {PACE_OPTIONS.map((option) => (
-                                                            <button
-                                                                key={option.value}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    field.onChange(option.value)
-                                                                    nextStep()
-                                                                }}
-                                                                className={cn(
-                                                                    "p-4 rounded-2xl border-2 text-left transition-all hover:border-primary/50",
-                                                                    field.value === option.value
-                                                                        ? "border-primary bg-primary/5"
-                                                                        : "border-border hover:bg-secondary/50"
-                                                                )}
-                                                            >
-                                                                <p className="font-semibold mb-1">{option.label}</p>
-                                                                <p className="text-xs text-muted-foreground">{option.description}</p>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    )}
-
-                                    {/* Step 6: Preferences */}
-                                    {step === 6 && (
-                                        <div className="space-y-6">
-                                            {/* Interests */}
-                                            <div>
-                                                <p className="label mb-3">Interests</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {INTEREST_OPTIONS.map((interest) => {
-                                                        const current = form.watch("interests")
-                                                        const isSelected = current.includes(interest)
-                                                        return (
-                                                            <button
-                                                                key={interest}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    if (isSelected) {
-                                                                        form.setValue("interests", current.filter((i) => i !== interest))
-                                                                    } else {
-                                                                        form.setValue("interests", [...current, interest])
-                                                                    }
-                                                                }}
-                                                                className={cn(
-                                                                    "px-4 py-2 rounded-full text-sm font-medium transition-all border",
-                                                                    isSelected
-                                                                        ? "bg-primary text-primary-foreground border-primary"
-                                                                        : "bg-background border-border hover:border-primary/50"
-                                                                )}
-                                                            >
-                                                                {interest}
-                                                            </button>
-                                                        )
-                                                    })}
-                                                </div>
-                                            </div>
-
-                                            {/* Dietary */}
-                                            <div>
-                                                <p className="label mb-3">Dietary Needs</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {DIETARY_OPTIONS.map((diet) => {
-                                                        const current = form.watch("dietaryRestrictions")
-                                                        const isSelected = current.includes(diet)
-                                                        return (
-                                                            <button
-                                                                key={diet}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    if (isSelected) {
-                                                                        form.setValue("dietaryRestrictions", current.filter((d) => d !== diet))
-                                                                    } else {
-                                                                        form.setValue("dietaryRestrictions", [...current, diet])
-                                                                    }
-                                                                }}
-                                                                className={cn(
-                                                                    "px-4 py-2 rounded-full text-sm font-medium transition-all border",
-                                                                    isSelected
-                                                                        ? "bg-primary text-primary-foreground border-primary"
-                                                                        : "bg-background border-border hover:border-primary/50"
-                                                                )}
-                                                            >
-                                                                {diet}
-                                                            </button>
-                                                        )
-                                                    })}
-                                                </div>
-                                            </div>
-
-                                            {/* Accessibility */}
-                                            <div>
-                                                <p className="label mb-3">Accessibility</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {ACCESSIBILITY_OPTIONS.map((need) => {
-                                                        const current = form.watch("accessibilityNeeds")
-                                                        const isSelected = current.includes(need)
-                                                        return (
-                                                            <button
-                                                                key={need}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    if (isSelected) {
-                                                                        form.setValue("accessibilityNeeds", current.filter((n) => n !== need))
-                                                                    } else {
-                                                                        form.setValue("accessibilityNeeds", [...current, need])
-                                                                    }
-                                                                }}
-                                                                className={cn(
-                                                                    "px-4 py-2 rounded-full text-sm font-medium transition-all border",
-                                                                    isSelected
-                                                                        ? "bg-primary text-primary-foreground border-primary"
-                                                                        : "bg-background border-border hover:border-primary/50"
-                                                                )}
-                                                            >
-                                                                {need}
-                                                            </button>
-                                                        )
-                                                    })}
-                                                </div>
-                                            </div>
-
-                                            <p className="text-center text-sm text-muted-foreground">
-                                                All preferences are optional
-                                            </p>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            </AnimatePresence>
-
-                            {/* Navigation */}
-                            <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={prevStep}
-                                    disabled={step === 1 || isLoading}
-                                    className={cn("gap-2", step === 1 && "invisible")}
-                                >
-                                    <ArrowLeft className="w-4 h-4" /> Back
-                                </Button>
-
-                                {step < STEPS.length ? (
-                                    <Button type="button" onClick={nextStep} className="gap-2 rounded-full px-6">
-                                        Next <ArrowRight className="w-4 h-4" />
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="gap-2 rounded-full px-6"
-                                    >
-                                        <Sparkles className="w-4 h-4" />
-                                        Generate Itinerary
-                                    </Button>
+                    {/* Progress Dots */}
+                    <div className="flex items-center justify-center gap-2 mb-8">
+                        {STEPS.map((s) => (
+                            <div
+                                key={s.id}
+                                className={cn(
+                                    "w-2 h-2 rounded-full transition-all duration-300",
+                                    s.id === step ? "w-8 bg-primary" : s.id < step ? "bg-primary" : "bg-border"
                                 )}
-                            </div>
-                        </form>
-                    </Form>
+                            />
+                        ))}
+                    </div>
                 </div>
-            </div>
+
+                {/* Content */}
+                <div className="relative z-10 max-w-2xl mx-auto px-4 pb-8">
+                    <div className="bg-card border border-border/60 rounded-3xl p-8 shadow-soft">
+                        {/* Step Header */}
+                        <div className="text-center mb-8">
+                            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                                <CurrentIcon className="w-6 h-6 text-primary" />
+                            </div>
+                            <h1 className="font-display text-2xl font-semibold tracking-tight mb-2">
+                                {STEPS[step - 1].title}
+                            </h1>
+                            <p className="text-muted-foreground">
+                                {STEPS[step - 1].description}
+                            </p>
+                        </div>
+
+                        {/* Form Content */}
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)}>
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={step}
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="min-h-[280px] flex flex-col justify-center"
+                                    >
+                                        {/* Step 1: Destination */}
+                                        {step === 1 && (
+                                            <FormField
+                                                control={form.control}
+                                                name="destination"
+                                                render={({ field }) => (
+                                                    <FormItem className="space-y-4">
+                                                        <FormControl>
+                                                            <Input
+                                                                placeholder="e.g. Tokyo, Japan"
+                                                                className="h-14 text-lg text-center rounded-2xl"
+                                                                autoFocus
+                                                                {...field}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === "Enter") {
+                                                                        e.preventDefault()
+                                                                        nextStep()
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage className="text-center" />
+                                                        <div className="flex flex-wrap justify-center gap-2 pt-4">
+                                                            {["Delhi, India", "Ayodhya, India", "Kathmandu, Nepal", "Moscow, Russia", "Paris, France", "Bali, Indonesia", "New York, USA", "Rome, Italy"].map((dest) => (
+                                                                <button
+                                                                    key={dest}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        field.onChange(dest)
+                                                                        nextStep()
+                                                                    }}
+                                                                    className="px-4 py-2 text-sm rounded-full bg-secondary hover:bg-secondary/80 transition-colors"
+                                                                >
+                                                                    {dest}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        )}
+
+                                        {/* Step 2: Duration */}
+                                        {step === 2 && (
+                                            <FormField
+                                                control={form.control}
+                                                name="numDays"
+                                                render={({ field }) => (
+                                                    <FormItem className="space-y-8">
+                                                        <div className="text-center">
+                                                            <span className="font-display text-6xl font-semibold text-primary">
+                                                                {field.value}
+                                                            </span>
+                                                            <span className="text-2xl text-muted-foreground ml-2">
+                                                                {field.value === 1 ? "day" : "days"}
+                                                            </span>
+                                                        </div>
+                                                        <FormControl>
+                                                            <Slider
+                                                                min={1}
+                                                                max={30}
+                                                                step={1}
+                                                                value={[field.value]}
+                                                                onValueChange={(vals) => field.onChange(vals[0])}
+                                                                className="py-4"
+                                                            />
+                                                        </FormControl>
+                                                        <div className="flex justify-between text-sm text-muted-foreground">
+                                                            <span>1 day</span>
+                                                            <span>30 days</span>
+                                                        </div>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        )}
+
+                                        {/* Step 3: Budget */}
+                                        {step === 3 && (
+                                            <FormField
+                                                control={form.control}
+                                                name="budget"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            {BUDGET_OPTIONS.map((option) => (
+                                                                <button
+                                                                    key={option.value}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        field.onChange(option.value)
+                                                                        nextStep()
+                                                                    }}
+                                                                    className={cn(
+                                                                        "p-4 rounded-2xl border-2 text-left transition-all hover:border-primary/50",
+                                                                        field.value === option.value
+                                                                            ? "border-primary bg-primary/5"
+                                                                            : "border-border hover:bg-secondary/50"
+                                                                    )}
+                                                                >
+                                                                    <p className="font-semibold mb-1">{option.label}</p>
+                                                                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        )}
+
+                                        {/* Step 4: Travelers */}
+                                        {step === 4 && (
+                                            <div className="space-y-4">
+                                                {TRAVELER_TYPES.map((type) => (
+                                                    <div
+                                                        key={type.id}
+                                                        className="flex items-center justify-between p-4 rounded-2xl border border-border bg-background"
+                                                    >
+                                                        <div>
+                                                            <p className="font-medium">{type.label}</p>
+                                                            <p className="text-sm text-muted-foreground">{type.description}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-8 w-8 rounded-full"
+                                                                onClick={() => updateTravelerCount(type.id, -1)}
+                                                                disabled={travelerCounts[type.id] === 0}
+                                                            >
+                                                                <Minus className="h-4 w-4" />
+                                                            </Button>
+                                                            <span className="w-8 text-center font-semibold">
+                                                                {travelerCounts[type.id]}
+                                                            </span>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-8 w-8 rounded-full"
+                                                                onClick={() => updateTravelerCount(type.id, 1)}
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <p className="text-center text-sm text-muted-foreground">
+                                                    Total: <span className="font-semibold text-foreground">{form.watch("partySize")} travelers</span>
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Step 5: Pace */}
+                                        {step === 5 && (
+                                            <FormField
+                                                control={form.control}
+                                                name="activityLevel"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            {PACE_OPTIONS.map((option) => (
+                                                                <button
+                                                                    key={option.value}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        field.onChange(option.value)
+                                                                        nextStep()
+                                                                    }}
+                                                                    className={cn(
+                                                                        "p-4 rounded-2xl border-2 text-left transition-all hover:border-primary/50",
+                                                                        field.value === option.value
+                                                                            ? "border-primary bg-primary/5"
+                                                                            : "border-border hover:bg-secondary/50"
+                                                                    )}
+                                                                >
+                                                                    <p className="font-semibold mb-1">{option.label}</p>
+                                                                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        )}
+
+                                        {/* Step 6: Preferences */}
+                                        {step === 6 && (
+                                            <div className="space-y-6">
+                                                {/* Interests */}
+                                                <div>
+                                                    <p className="label mb-3">Interests</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {INTEREST_OPTIONS.map((interest) => {
+                                                            const current = form.watch("interests")
+                                                            const isSelected = current.includes(interest)
+                                                            return (
+                                                                <button
+                                                                    key={interest}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (isSelected) {
+                                                                            form.setValue("interests", current.filter((i) => i !== interest))
+                                                                        } else {
+                                                                            form.setValue("interests", [...current, interest])
+                                                                        }
+                                                                    }}
+                                                                    className={cn(
+                                                                        "px-4 py-2 rounded-full text-sm font-medium transition-all border",
+                                                                        isSelected
+                                                                            ? "bg-primary text-primary-foreground border-primary"
+                                                                            : "bg-background border-border hover:border-primary/50"
+                                                                    )}
+                                                                >
+                                                                    {interest}
+                                                                </button>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                {/* Dietary */}
+                                                <div>
+                                                    <p className="label mb-3">Dietary Needs</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {DIETARY_OPTIONS.map((diet) => {
+                                                            const current = form.watch("dietaryRestrictions")
+                                                            const isSelected = current.includes(diet)
+                                                            return (
+                                                                <button
+                                                                    key={diet}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (isSelected) {
+                                                                            form.setValue("dietaryRestrictions", current.filter((d) => d !== diet))
+                                                                        } else {
+                                                                            form.setValue("dietaryRestrictions", [...current, diet])
+                                                                        }
+                                                                    }}
+                                                                    className={cn(
+                                                                        "px-4 py-2 rounded-full text-sm font-medium transition-all border",
+                                                                        isSelected
+                                                                            ? "bg-primary text-primary-foreground border-primary"
+                                                                            : "bg-background border-border hover:border-primary/50"
+                                                                    )}
+                                                                >
+                                                                    {diet}
+                                                                </button>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                {/* Accessibility */}
+                                                <div>
+                                                    <p className="label mb-3">Accessibility</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {ACCESSIBILITY_OPTIONS.map((need) => {
+                                                            const current = form.watch("accessibilityNeeds")
+                                                            const isSelected = current.includes(need)
+                                                            return (
+                                                                <button
+                                                                    key={need}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (isSelected) {
+                                                                            form.setValue("accessibilityNeeds", current.filter((n) => n !== need))
+                                                                        } else {
+                                                                            form.setValue("accessibilityNeeds", [...current, need])
+                                                                        }
+                                                                    }}
+                                                                    className={cn(
+                                                                        "px-4 py-2 rounded-full text-sm font-medium transition-all border",
+                                                                        isSelected
+                                                                            ? "bg-primary text-primary-foreground border-primary"
+                                                                            : "bg-background border-border hover:border-primary/50"
+                                                                    )}
+                                                                >
+                                                                    {need}
+                                                                </button>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                <p className="text-center text-sm text-muted-foreground">
+                                                    All preferences are optional
+                                                </p>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                </AnimatePresence>
+
+                                {/* Navigation */}
+                                <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={prevStep}
+                                        disabled={step === 1 || isLoading}
+                                        className={cn("gap-2", step === 1 && "invisible")}
+                                    >
+                                        <ArrowLeft className="w-4 h-4" /> Back
+                                    </Button>
+
+                                    {step < STEPS.length ? (
+                                        <Button type="button" onClick={nextStep} className="gap-2 rounded-full px-6">
+                                            Next <ArrowRight className="w-4 h-4" />
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type="submit"
+                                            disabled={isLoading}
+                                            className="gap-2 rounded-full px-6"
+                                        >
+                                            <Sparkles className="w-4 h-4" />
+                                            Generate Itinerary
+                                        </Button>
+                                    )}
+                                </div>
+                            </form>
+                        </Form>
+                    </div>
+                </div>
             </div>
         </div>
     )

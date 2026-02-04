@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Mountain, Menu, X } from "lucide-react"
+import { Home, Menu, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
@@ -29,12 +29,12 @@ export function Navbar() {
             { href: "/", label: "Home" },
             { href: "/create", label: "Create Trip" },
         ]
-        
+
         // Only add Dashboard link if user is authenticated
         if (session) {
             links.splice(1, 0, { href: "/dashboard", label: "Dashboard" })
         }
-        
+
         return links
     }, [session])
 
@@ -64,7 +64,7 @@ export function Navbar() {
                             className="flex items-center gap-2 group"
                         >
                             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                                <Mountain className="w-4 h-4 text-primary" />
+                                <Home className="w-4 h-4 text-primary" />
                             </div>
                             <span className="font-display text-xl font-semibold tracking-tight">
                                 MTA
@@ -101,10 +101,7 @@ export function Navbar() {
                             {/* Profile Dropdown */}
                             <ProfileTest />
 
-                            {/* CTA Button - Desktop */}
-                            <Button asChild size="sm" className="hidden md:flex rounded-full">
-                                <Link href="/create">Plan a Trip</Link>
-                            </Button>
+
 
                             {/* Mobile Menu Toggle */}
                             <Button
@@ -139,7 +136,7 @@ export function Navbar() {
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
-                                        <Mountain className="w-4 h-4 text-primary" />
+                                        <Home className="w-4 h-4 text-primary" />
                                     </div>
                                     <span className="font-display text-xl font-semibold tracking-tight">
                                         MTA
@@ -180,14 +177,7 @@ export function Navbar() {
                                 ))}
                             </div>
 
-                            {/* Bottom CTA */}
-                            <div className="mt-auto">
-                                <Button asChild size="xl" className="w-full rounded-full">
-                                    <Link href="/create" onClick={() => setMobileMenuOpen(false)}>
-                                        Plan a Trip
-                                    </Link>
-                                </Button>
-                            </div>
+
                         </div>
                     </motion.div>
                 )}

@@ -4,14 +4,17 @@ import bcrypt from "bcryptjs"
 import { z } from "zod"
 
 const registerSchema = z.object({
-    email: z.string().email(),
+    name: z.string().min(2, "Name is required"),
+    email: z.string().email("Please enter a valid email"),
+    phoneNumber: z.string().min(10, "Phone number is required"),
+    city: z.string().min(2, "City is required"),
     password: z.string().min(8, "Password must be at least 8 characters"),
 })
 
 export async function POST(req: Request) {
     try {
         const body = await req.json()
-        const { email, password } = registerSchema.parse(body)
+        const { name, email, phoneNumber, city, password } = registerSchema.parse(body)
 
         const existingUser = await prisma.user.findUnique({
             where: { email },
@@ -28,7 +31,10 @@ export async function POST(req: Request) {
 
         const user = await prisma.user.create({
             data: {
+                name,
                 email,
+                phoneNumber,
+                city,
                 passwordHash: hashedPassword,
             },
         })
@@ -44,8 +50,9 @@ export async function POST(req: Request) {
                 { status: 400 }
             )
         }
+        console.error("Registration error:", error)
         return NextResponse.json(
-            { message: "Internal server error" },
+            { message: error instanceof Error ? error.message : "Internal server error" },
             { status: 500 }
         )
     }

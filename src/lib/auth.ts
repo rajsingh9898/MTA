@@ -44,6 +44,9 @@ export const authOptions: NextAuthOptions = {
                 return {
                     id: user.id,
                     email: user.email,
+                    name: user.name,
+                    phoneNumber: user.phoneNumber,
+                    city: user.city,
                 }
             },
         }),
@@ -53,12 +56,18 @@ export const authOptions: NextAuthOptions = {
             if (token) {
                 session.user.id = token.id as string
                 session.user.email = token.email as string
+                session.user.name = token.name as string
+                session.user.phoneNumber = token.phoneNumber as string
+                session.user.city = token.city as string
             }
             return session
         },
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id
+                token.name = user.name
+                token.phoneNumber = user.phoneNumber
+                token.city = user.city
             }
             return token
         },

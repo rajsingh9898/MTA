@@ -48,9 +48,11 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (session?.user) {
-            setFirstName(session.user.email?.split('@')[0] || "")
-            setLastName("")
+            setFirstName(session.user.name || "")
+            // setLastName("") // We are not storing last name separately yet
             setBio("Passionate traveler exploring the world one destination at a time.")
+            setPhone(session.user.phoneNumber || "")
+            setLocation(session.user.city || "")
         }
     }, [session])
 
@@ -70,12 +72,12 @@ export default function ProfilePage() {
             }
 
             const success = profileStorage.save(profileData)
-            
+
             if (success) {
                 setSaveSuccess(true)
                 // Hide success message after 3 seconds
                 setTimeout(() => setSaveSuccess(false), 3000)
-                
+
                 // In a real app, you would also save to your database:
                 // await fetch('/api/profile', {
                 //     method: 'POST',
@@ -109,7 +111,7 @@ export default function ProfilePage() {
         <div className="min-h-screen relative">
             {/* Travel-themed background */}
             <div className="fixed inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
-            <div 
+            <div
                 className="fixed inset-0 opacity-[0.04]"
                 style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2378716C' stroke-width='0.5' fill-opacity='0.1'%3E%3Cpath d='M100 200 Q200 150 300 200 T500 200 Q600 150 700 200'/%3E%3Cpath d='M150 180 Q250 130 350 180 T550 180'/%3E%3Cpath d='M200 220 Q300 270 400 220 T600 220'/%3E%3Ccircle cx='200' cy='180' r='3' fill='%2378716C'/%3E%3Ccircle cx='400' cy='200' r='3' fill='%2378716C'/%3E%3Ccircle cx='600' cy='180' r='3' fill='%2378716C'/%3E%3C/g%3E%3C/svg%3E")`,
@@ -118,7 +120,7 @@ export default function ProfilePage() {
                     backgroundRepeat: 'repeat',
                 }}
             />
-            
+
             <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <motion.div
@@ -241,7 +243,7 @@ export default function ProfilePage() {
                                             </>
                                         )}
                                     </Button>
-                                    
+
                                     {saveSuccess && (
                                         <motion.div
                                             initial={{ opacity: 0, scale: 0.8 }}

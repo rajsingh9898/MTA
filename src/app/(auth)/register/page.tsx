@@ -22,7 +22,10 @@ import {
 import { Input } from "@/components/ui/input"
 
 const registerSchema = z.object({
+    name: z.string().min(2, "Name is required"),
     email: z.string().email("Please enter a valid email"),
+    phoneNumber: z.string().min(10, "Phone number is required"),
+    city: z.string().min(2, "City is required"),
     password: z.string().min(8, "Password must be at least 8 characters"),
 })
 
@@ -35,7 +38,10 @@ export default function RegisterPage() {
     const form = useForm<RegisterFormValues>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
+            name: "",
             email: "",
+            phoneNumber: "",
+            city: "",
             password: "",
         },
     })
@@ -90,6 +96,62 @@ export default function RegisterPage() {
             {/* Form */}
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-sm font-medium">Name</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="John Doe"
+                                        disabled={isLoading}
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                            </FormItem>
+                        )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="phoneNumber"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-sm font-medium">Phone</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="+1234567890"
+                                            disabled={isLoading}
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage className="text-xs" />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="city"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-sm font-medium">City</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="New York"
+                                            disabled={isLoading}
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage className="text-xs" />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
                     <FormField
                         control={form.control}
                         name="email"

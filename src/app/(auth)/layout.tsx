@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Mountain } from "lucide-react"
+import { Mountain, Home } from "lucide-react"
 
 const images = [
     {
@@ -66,14 +66,21 @@ export default function AuthLayout({
                 {/* Content Overlay */}
                 <div className="absolute inset-0 flex flex-col justify-between p-10">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2 text-white">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm">
-                            <Mountain className="w-5 h-5" />
-                        </div>
-                        <span className="font-display text-2xl font-semibold tracking-tight">
-                            MTA
-                        </span>
-                    </Link>
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/"
+                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all backdrop-blur-sm"
+                            title="Go Home"
+                        >
+                            <Home className="w-5 h-5" />
+                        </Link>
+
+                        <Link href="/" className="flex items-center gap-2 text-white">
+                            <span className="font-display text-2xl font-semibold tracking-tight">
+                                MTA
+                            </span>
+                        </Link>
+                    </div>
 
                     {/* Bottom Content */}
                     <div className="text-white">
@@ -94,8 +101,8 @@ export default function AuthLayout({
                                     key={idx}
                                     onClick={() => setCurrentImage(idx)}
                                     className={`h-1 rounded-full transition-all duration-300 ${idx === currentImage
-                                            ? "w-8 bg-white"
-                                            : "w-4 bg-white/40 hover:bg-white/60"
+                                        ? "w-8 bg-white"
+                                        : "w-4 bg-white/40 hover:bg-white/60"
                                         }`}
                                 />
                             ))}
@@ -108,7 +115,7 @@ export default function AuthLayout({
             <div className="flex-1 flex items-center justify-center p-6 lg:p-10 relative">
                 {/* Travel-themed background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
-                <div 
+                <div
                     className="absolute inset-0 opacity-[0.04]"
                     style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2378716C' stroke-width='0.5' fill-opacity='0.1'%3E%3Cpath d='M100 200 Q200 150 300 200 T500 200 Q600 150 700 200'/%3E%3Cpath d='M150 180 Q250 130 350 180 T550 180'/%3E%3Cpath d='M200 220 Q300 270 400 220 T600 220'/%3E%3Ccircle cx='200' cy='180' r='3' fill='%2378716C'/%3E%3Ccircle cx='400' cy='200' r='3' fill='%2378716C'/%3E%3Ccircle cx='600' cy='180' r='3' fill='%2378716C'/%3E%3C/g%3E%3C/svg%3E")`,
@@ -117,7 +124,7 @@ export default function AuthLayout({
                         backgroundRepeat: 'repeat',
                     }}
                 />
-                
+
                 {/* Mobile Logo */}
                 <Link
                     href="/"
