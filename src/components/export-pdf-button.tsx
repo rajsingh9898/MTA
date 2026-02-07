@@ -29,6 +29,12 @@ interface ItineraryData {
         totalActivities: number
         keyHighlights: string[]
     }
+    tripMetadata?: {
+        name?: string
+        startDate?: string
+        endDate?: string
+        userName?: string
+    }
 }
 
 export function ExportPdfButton({ data }: { data: ItineraryData }) {
@@ -50,7 +56,7 @@ export function ExportPdfButton({ data }: { data: ItineraryData }) {
     return (
         <PDFDownloadLink
             document={<PdfDocument data={data} />}
-            fileName={`MTA_${data.overview.destination.replace(/\s+/g, "_")}.pdf`}
+            fileName={`MTA_${(data.tripMetadata?.name || data.overview.destination).replace(/\s+/g, "_")}.pdf`}
         >
             {({ loading }) => (
                 <Button variant="outline" disabled={loading}>

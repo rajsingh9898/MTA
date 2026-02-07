@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
+import { auth } from "@/lib/auth"
 
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getDestinationImage } from "@/lib/unsplash"
 import { ItineraryView } from "@/components/itinerary-view"
@@ -36,7 +35,7 @@ export default async function ItineraryPage({
 }: {
     params: Promise<{ id: string }>
 }) {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     const { id } = await params
 
     if (!session) {
@@ -69,6 +68,7 @@ export default async function ItineraryPage({
             imageUrl={imageData.url}
             photographer={imageData.photographer}
             photographerUrl={imageData.photographerUrl}
+            user={session.user}
         />
     )
 }
