@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { CalendarDays, MapPin, Users, Wallet, ArrowRight } from "lucide-react"
 import { format } from "date-fns"
 import { motion } from "framer-motion"
@@ -14,6 +15,7 @@ interface ItineraryCardProps {
         partySize: number
         createdAt: Date
     }
+    imageUrl?: string
 }
 
 // Generate a deterministic gradient based on destination name
@@ -43,7 +45,7 @@ function getDestinationInitial(destination: string): string {
     return destination.charAt(0).toUpperCase()
 }
 
-export function ItineraryCard({ itinerary }: ItineraryCardProps) {
+export function ItineraryCard({ itinerary, imageUrl }: ItineraryCardProps) {
     const gradient = getDestinationGradient(itinerary.destination)
     const initial = getDestinationInitial(itinerary.destination)
 
@@ -55,30 +57,45 @@ export function ItineraryCard({ itinerary }: ItineraryCardProps) {
         >
             <Link href={`/itinerary/${itinerary.id}`} className="group block">
                 <article className="bg-card border border-border/60 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-elevated hover:border-primary/20 hover:-translate-y-1">
-                    {/* Gradient Header */}
-                    <div className={`relative h-32 bg-gradient-to-br ${gradient} overflow-hidden`}>
-                        {/* Pattern overlay */}
-                        <div className="absolute inset-0 opacity-10">
-                            <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                <pattern id={`pattern-${itinerary.id}`} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                                    <circle cx="10" cy="10" r="1.5" fill="white" />
-                                </pattern>
-                                <rect x="0" y="0" width="100" height="100" fill={`url(#pattern-${itinerary.id})`} />
-                            </svg>
-                        </div>
-
-                        {/* Large initial */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                            <span className="text-6xl font-display font-bold text-white/20">
-                                {initial}
-                            </span>
-                        </div>
+                    {/* Image/Gradient Header */}
+                    <div className={`relative h-48 overflow-hidden ${!imageUrl ? `bg-gradient-to-br ${gradient}` : 'bg-gray-100'}`}>
+                        {imageUrl ? (
+                            <>
+                                {/* Background Image */}
+                                <Image
+                                    src={imageUrl}
+                                    alt={itinerary.destination}
+                                    fill
+                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                                {/* Overlay for text readability */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                            </>
+                        ) : (
+                            <>
+                                {/* Pattern overlay for gradient fallback */}
+                                <div className="absolute inset-0 opacity-10">
+                                    <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                        <pattern id={`pattern-${itinerary.id}`} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                            <circle cx="10" cy="10" r="1.5" fill="white" />
+                                        </pattern>
+                                        <rect x="0" y="0" width="100" height="100" fill={`url(#pattern-${itinerary.id})`} />
+                                    </svg>
+                                </div>
+                                {/* Large initial fallback */}
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                                    <span className="text-6xl font-display font-bold text-white/20">
+                                        {initial}
+                                    </span>
+                                </div>
+                            </>
+                        )}
 
                         {/* Destination Name Overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/30 to-transparent">
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
                             <div className="flex items-center gap-2 text-white">
-                                <MapPin className="w-4 h-4" />
-                                <h3 className="font-display text-lg font-semibold tracking-tight line-clamp-1">
+                                <MapPin className="w-4 h-4 shrink-0" />
+                                <h3 className="font-display text-lg font-semibold tracking-tight line-clamp-1 text-shadow-sm">
                                     {itinerary.destination}
                                 </h3>
                             </div>

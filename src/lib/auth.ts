@@ -1,9 +1,9 @@
-import { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
+import NextAuth from "next-auth"
+import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 
-export const authOptions: NextAuthOptions = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
     session: {
         strategy: "jwt",
     },
@@ -11,7 +11,7 @@ export const authOptions: NextAuthOptions = {
         signIn: "/login",
     },
     providers: [
-        CredentialsProvider({
+        Credentials({
             name: "Credentials",
             credentials: {
                 email: { label: "Email", type: "email" },
@@ -24,7 +24,7 @@ export const authOptions: NextAuthOptions = {
 
                 const user = await prisma.user.findUnique({
                     where: {
-                        email: credentials.email,
+                        email: credentials.email as string,
                     },
                 })
 
@@ -33,12 +33,16 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 const isPasswordValid = await bcrypt.compare(
-                    credentials.password,
+                    credentials.password as string,
                     user.passwordHash
                 )
 
                 if (!isPasswordValid) {
                     return null
+                }
+
+                if (!user.isVerified) {
+                    throw new Error("Please verify your email address")
                 }
 
                 return {
@@ -53,7 +57,7 @@ export const authOptions: NextAuthOptions = {
     ],
     callbacks: {
         async session({ session, token }) {
-            if (token) {
+            if (token && session.user) {
                 session.user.id = token.id as string
                 session.user.email = token.email as string
                 session.user.name = token.name as string
@@ -72,4 +76,4 @@ export const authOptions: NextAuthOptions = {
             return token
         },
     },
-}
+})

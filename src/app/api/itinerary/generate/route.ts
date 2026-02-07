@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { itinerarySchema } from "@/lib/schemas"
 import { searchPerplexity, buildPerplexityQuery } from "@/lib/perplexity"
@@ -131,7 +130,7 @@ function generateMockItinerary(destination: string, numDays: number, budget: str
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
@@ -146,6 +145,7 @@ export async function POST(req: Request) {
       )
     }
 
+    // Extracted in two steps to prevent ghost duplicate errors
     const {
       destination,
       numDays,
@@ -153,9 +153,14 @@ export async function POST(req: Request) {
       ageGroups,
       partySize,
       activityLevel,
+    } = validation.data
+
+    const {
       dietaryRestrictions,
       accessibilityNeeds,
       interests,
+      startDate,
+      endDate,
     } = validation.data
 
     let itineraryData;
@@ -300,6 +305,8 @@ IMPORTANT RULES:
           dietaryRestrictions,
           accessibilityNeeds,
           interests,
+          startDate: startDate ? new Date(startDate) : null,
+          endDate: endDate ? new Date(endDate) : null,
           itineraryData,
         },
       })
