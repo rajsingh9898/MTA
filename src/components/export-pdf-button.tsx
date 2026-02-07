@@ -29,6 +29,12 @@ interface ItineraryData {
         totalActivities: number
         keyHighlights: string[]
     }
+    tripMetadata?: {
+        name?: string
+        startDate?: string
+        endDate?: string
+        userName?: string
+    }
 }
 
 export function ExportPdfButton({ data }: { data: ItineraryData }) {
@@ -40,7 +46,7 @@ export function ExportPdfButton({ data }: { data: ItineraryData }) {
 
     if (!isClient) {
         return (
-            <Button variant="outline" disabled>
+            <Button variant="outline" disabled className="gap-2 bg-black/5 border-black/10 text-black hover:bg-black hover:text-white transition-colors">
                 <Download className="mr-2 h-4 w-4" />
                 Export PDF
             </Button>
@@ -50,10 +56,10 @@ export function ExportPdfButton({ data }: { data: ItineraryData }) {
     return (
         <PDFDownloadLink
             document={<PdfDocument data={data} />}
-            fileName={`MTA_${data.overview.destination.replace(/\s+/g, "_")}.pdf`}
+            fileName={`MTA_${(data.tripMetadata?.name || data.overview.destination).replace(/\s+/g, "_")}.pdf`}
         >
             {({ loading }) => (
-                <Button variant="outline" disabled={loading}>
+                <Button variant="outline" disabled={loading} className="gap-2 bg-black/5 border-black/10 text-black hover:bg-black hover:text-white transition-colors">
                     <Download className="mr-2 h-4 w-4" />
                     {loading ? "Generating..." : "Export PDF"}
                 </Button>

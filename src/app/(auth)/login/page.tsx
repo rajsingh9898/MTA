@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -32,6 +32,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 export default function LoginPage() {
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
 
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -114,19 +115,34 @@ export default function LoginPage() {
                                 <div className="flex items-center justify-between">
                                     <FormLabel className="text-sm font-medium">Password</FormLabel>
                                     <Link
-                                        href="#"
+                                        href="/forgot-password"
                                         className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                                     >
                                         Forgot password?
                                     </Link>
                                 </div>
                                 <FormControl>
-                                    <Input
-                                        type="password"
-                                        autoComplete="current-password"
-                                        disabled={isLoading}
-                                        {...field}
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            type={showPassword ? "text" : "password"}
+                                            autoComplete="current-password"
+                                            disabled={isLoading}
+                                            {...field}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                            ) : (
+                                                <Eye className="h-4 w-4 text-muted-foreground" />
+                                            )}
+                                        </Button>
+                                    </div>
                                 </FormControl>
                                 <FormMessage className="text-xs" />
                             </FormItem>

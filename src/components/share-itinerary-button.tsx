@@ -79,7 +79,7 @@ export function ShareItineraryButton({
             <DialogTrigger asChild>
                 <Button
                     variant="outline"
-                    className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    className="gap-2 bg-black/5 border-black/10 text-black hover:bg-black hover:text-white transition-colors"
                 >
                     <Share2 className="h-4 w-4" />
                     Share
