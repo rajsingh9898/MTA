@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Outfit:wght@300;400;500;600;700&display=swap');
 
 @import "tailwindcss";
+@source "../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
 @import "tw-animate-css";
 
 /* ============================================
@@ -55,7 +56,7 @@
    ============================================ */
 :root {
   /* Core */
-  --background: #FDFBF7;
+  --background: #D1FFFF;
   --foreground: #1C1917;
 
   /* Primary - Forest Green */
@@ -122,25 +123,9 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Consistent Travel Theme Background */
   body {
-    background: 
-      /* Soft pastel gradient */
-      linear-gradient(135deg, 
-        #f9faf8 0%, 
-        #f5f3ef 25%, 
-        #f8f7f4 50%, 
-        #faf9f7 75%, 
-        #f9faf8 100%
-      ),
-      
-      /* Very subtle dotted world map pattern */
-      url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%232D5A4A' fill-opacity='0.0105'%3E%3Ccircle cx='2' cy='2' r='1'/%3E%3Ccircle cx='12' cy='8' r='1'/%3E%3Ccircle cx='22' cy='4' r='1'/%3E%3Ccircle cx='32' cy='12' r='1'/%3E%3Ccircle cx='8' cy='18' r='1'/%3E%3Ccircle cx='18' cy='22' r='1'/%3E%3Ccircle cx='28' cy='18' r='1'/%3E%3Ccircle cx='38' cy='28' r='1'/%3E%3Ccircle cx='4' cy='32' r='1'/%3E%3Ccircle cx='14' cy='38' r='1'/%3E%3Ccircle cx='24' cy='34' r='1'/%3E%3Ccircle cx='34' cy='38' r='1'/%3E%3C/g%3E%3C/svg%3E");
-    
-    background-color: #f9faf8;
+    background-color: var(--background);
     background-attachment: fixed;
-    background-size: 100% 100%, 40px 40px;
-    background-position: 0 0, 0 0;
   }
 
   /* Refined Selection */
@@ -340,37 +325,31 @@
 
   /* Premium Background Utilities */
   .bg-hero-premium {
-    background: 
+    background:
       /* Abstract blurred shapes - reduced opacity */
-      radial-gradient(ellipse at 25% 20%, rgba(107, 144, 128, 0.056) 0%, transparent 40%),
+      radial-gradient(ellipse at 25% 20%, rgba(124, 165, 184, 0.056) 0%, transparent 40%),
       radial-gradient(ellipse at 75% 60%, rgba(45, 90, 74, 0.042) 0%, transparent 45%),
       radial-gradient(ellipse at 50% 80%, rgba(124, 165, 184, 0.035) 0%, transparent 50%),
-      
+
       /* Soft gradient overlay */
-      linear-gradient(135deg, 
-        rgba(249, 250, 248, 0.95) 0%, 
-        rgba(245, 243, 239, 0.95) 50%, 
-        rgba(248, 247, 244, 0.95) 100%
-      ),
-      
+      linear-gradient(135deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(245, 247, 250, 0.95) 50%,
+        rgba(255, 255, 255, 0.95) 100%),
+
       /* Base gradient */
-      linear-gradient(135deg, 
-        #f9faf8 0%, 
-        #f5f3ef 25%, 
-        #f8f7f4 50%, 
-        #faf9f7 75%, 
-        #f9faf8 100%
-      );
+      linear-gradient(135deg,
+        #fdfbfb 0%,
+        #ebedee 100%);
   }
 
   .dark .bg-hero-premium {
-    background: 
+    background:
       radial-gradient(ellipse at 25% 20%, rgba(107, 144, 128, 0.028) 0%, transparent 40%),
       radial-gradient(ellipse at 75% 60%, rgba(45, 90, 74, 0.021) 0%, transparent 45%),
-      linear-gradient(135deg, 
-        rgba(15, 15, 15, 0.95) 0%, 
-        rgba(28, 28, 28, 0.95) 100%
-      );
+      linear-gradient(135deg,
+        rgba(15, 15, 15, 0.95) 0%,
+        rgba(28, 28, 28, 0.95) 100%);
   }
 
   /* Glassmorphism Cards */
@@ -379,7 +358,7 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 
+    box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.06),
       0 2px 8px rgba(0, 0, 0, 0.04),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -387,12 +366,11 @@
 
   /* Content Section Backgrounds */
   .bg-content-premium {
-    background: linear-gradient(135deg, 
-      #f9faf8 0%, 
-      #f5f3ef 30%, 
-      #f8f7f4 70%, 
-      #faf9f7 100%
-    );
+    background: linear-gradient(135deg,
+        #f9faf8 0%,
+        #f5f3ef 30%,
+        #f8f7f4 70%,
+        #faf9f7 100%);
     position: relative;
   }
 
@@ -400,7 +378,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: 
+    background:
       radial-gradient(circle at 20% 30%, rgba(107, 144, 128, 0.014) 0%, transparent 50%),
       radial-gradient(circle at 80% 70%, rgba(45, 90, 74, 0.007) 0%, transparent 50%);
     pointer-events: none;
@@ -410,23 +388,23 @@
   .bg-cream-50 {
     background-color: #fefdf8;
   }
-  
+
   .bg-amber-50 {
     background-color: #fffbeb;
   }
-  
+
   .bg-yellow-50 {
     background-color: #fefce8;
   }
 
   .shadow-premium-medium {
-    box-shadow: 
+    box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.06),
       0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   .shadow-premium-strong {
-    box-shadow: 
+    box-shadow:
       0 16px 64px rgba(0, 0, 0, 0.08),
       0 4px 16px rgba(0, 0, 0, 0.06);
   }

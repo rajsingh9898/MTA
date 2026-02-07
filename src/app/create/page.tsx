@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import {
     MapPin,
-    Calendar,
+    Calendar as CalendarIcon,
     Wallet,
     Users,
     Activity,
@@ -29,12 +29,15 @@ import { itinerarySchema, ItineraryInput, DIETARY_OPTIONS, ACCESSIBILITY_OPTIONS
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
+// import { Slider } from "@/components/ui/slider"
+import { Calendar } from "@/components/ui/calendar"
+import { addDays, differenceInDays, format } from "date-fns"
+import { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 
 const STEPS = [
     { id: 1, title: "Destination", description: "Where would you like to go?", icon: MapPin },
-    { id: 2, title: "Duration", description: "How long is your trip?", icon: Calendar },
+    { id: 2, title: "Duration", description: "How long is your trip?", icon: CalendarIcon },
     { id: 3, title: "Budget", description: "What's your budget preference?", icon: Wallet },
     { id: 4, title: "Travelers", description: "Who's coming along?", icon: Users },
     { id: 5, title: "Pace", description: "How active do you want to be?", icon: Activity },
@@ -83,11 +86,14 @@ export default function CreateItineraryPage() {
         Seniors: 0,
     })
 
+    const [dateRange, setDateRange] = useState<DateRange | undefined>()
+    const [activeField, setActiveField] = useState<"from" | "to" | null>(null)
+
     const form = useForm<ItineraryInput>({
         resolver: zodResolver(itinerarySchema),
         defaultValues: {
             destination: "",
-            numDays: 5,
+            numDays: 0,
             budget: "Moderate",
             ageGroups: ["Adults"],
             partySize: 1,
@@ -95,6 +101,8 @@ export default function CreateItineraryPage() {
             dietaryRestrictions: [],
             accessibilityNeeds: [],
             interests: [],
+            startDate: undefined,
+            endDate: undefined,
         },
     })
 
@@ -192,16 +200,8 @@ export default function CreateItineraryPage() {
     return (
         <div className="min-h-screen relative">
             {/* Travel-themed background */}
-            <div className="fixed inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
-            <div
-                className="fixed inset-0 opacity-[0.04]"
-                style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2378716C' stroke-width='0.5' fill-opacity='0.1'%3E%3Cpath d='M100 200 Q200 150 300 200 T500 200 Q600 150 700 200'/%3E%3Cpath d='M150 180 Q250 130 350 180 T550 180'/%3E%3Cpath d='M200 220 Q300 270 400 220 T600 220'/%3E%3Ccircle cx='200' cy='180' r='3' fill='%2378716C'/%3E%3Ccircle cx='400' cy='200' r='3' fill='%2378716C'/%3E%3Ccircle cx='600' cy='180' r='3' fill='%2378716C'/%3E%3C/g%3E%3C/svg%3E")`,
-                    backgroundSize: '800px 400px',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'repeat',
-                }}
-            />
+            {/* Premium Background */}
+            <div className="fixed inset-0" style={{ backgroundColor: "#D1FFFF" }} />
 
             <div className="relative z-10">
 
@@ -334,36 +334,151 @@ export default function CreateItineraryPage() {
 
                                         {/* Step 2: Duration */}
                                         {step === 2 && (
-                                            <FormField
-                                                control={form.control}
-                                                name="numDays"
-                                                render={({ field }) => (
-                                                    <FormItem className="space-y-8">
-                                                        <div className="text-center">
-                                                            <span className="font-display text-6xl font-semibold text-primary">
-                                                                {field.value}
-                                                            </span>
-                                                            <span className="text-2xl text-muted-foreground ml-2">
-                                                                {field.value === 1 ? "day" : "days"}
-                                                            </span>
-                                                        </div>
-                                                        <FormControl>
-                                                            <Slider
-                                                                min={1}
-                                                                max={30}
-                                                                step={1}
-                                                                value={[field.value]}
-                                                                onValueChange={(vals) => field.onChange(vals[0])}
-                                                                className="py-4"
-                                                            />
-                                                        </FormControl>
-                                                        <div className="flex justify-between text-sm text-muted-foreground">
-                                                            <span>1 day</span>
-                                                            <span>30 days</span>
-                                                        </div>
-                                                    </FormItem>
-                                                )}
-                                            />
+                                            <>
+                                                {console.log("Rendering Duration Step")}
+                                                <FormField
+                                                    control={form.control}
+                                                    name="numDays"
+                                                    render={({ field }) => (
+                                                        <FormItem className="space-y-6">
+                                                            {/* Date Display Columns */}
+                                                            <div className="relative">
+                                                                {/* Backdrop for closing popup */}
+                                                                {activeField && (
+                                                                    <div
+                                                                        className="fixed inset-0 z-10 bg-transparent"
+                                                                        onClick={() => setActiveField(null)}
+                                                                    />
+                                                                )}
+
+                                                                {/* Date Display Columns */}
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-0">
+                                                                    <div
+                                                                        onClick={() => {
+                                                                            setActiveField("from")
+                                                                        }}
+                                                                        className={cn(
+                                                                            "p-4 rounded-2xl border cursor-pointer transition-all duration-300",
+                                                                            activeField === "from"
+                                                                                ? "bg-primary/10 border-primary ring-2 ring-primary/20"
+                                                                                : dateRange?.from
+                                                                                    ? "bg-primary/5 border-primary/20"
+                                                                                    : "bg-secondary/30 border-border hover:border-primary/50"
+                                                                        )}
+                                                                    >
+                                                                        <p className={cn("text-sm mb-1 transition-colors", activeField === "from" ? "text-primary font-medium" : "text-muted-foreground")}>
+                                                                            Start Date
+                                                                        </p>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <CalendarIcon className={cn("w-4 h-4 transition-colors", activeField === "from" ? "text-primary" : "text-primary/50")} />
+                                                                            <p className={cn("font-medium text-lg", !dateRange?.from && "text-muted-foreground")}>
+                                                                                {dateRange?.from ? format(dateRange.from, "EEE, MMM d") : "Select date"}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div
+                                                                        onClick={() => {
+                                                                            if (dateRange?.from) setActiveField("to")
+                                                                        }}
+                                                                        className={cn(
+                                                                            "p-4 rounded-2xl border transition-all duration-300",
+                                                                            !dateRange?.from ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+                                                                            activeField === "to"
+                                                                                ? "bg-primary/10 border-primary ring-2 ring-primary/20"
+                                                                                : dateRange?.to
+                                                                                    ? "bg-primary/5 border-primary/20"
+                                                                                    : "bg-secondary/30 border-border hover:border-primary/50"
+                                                                        )}
+                                                                    >
+                                                                        <p className={cn("text-sm mb-1 transition-colors", activeField === "to" ? "text-primary font-medium" : "text-muted-foreground")}>
+                                                                            End Date
+                                                                        </p>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <CalendarIcon className={cn("w-4 h-4 transition-colors", activeField === "to" ? "text-primary" : "text-primary/50")} />
+                                                                            <p className={cn("font-medium text-lg", !dateRange?.to && "text-muted-foreground")}>
+                                                                                {dateRange?.to ? format(dateRange.to, "EEE, MMM d") : "Select date"}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Calendar Popup */}
+                                                                <AnimatePresence>
+                                                                    {activeField && (
+                                                                        <motion.div
+                                                                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                                            transition={{ duration: 0.2 }}
+                                                                            className="absolute z-20 left-0 right-0 top-[calc(100%+1rem)] flex justify-center"
+                                                                        >
+                                                                            <div className="p-6 bg-background rounded-3xl border border-border shadow-soft shadow-xl w-full max-w-[450px]">
+                                                                                <Calendar
+                                                                                    mode="range"
+                                                                                    defaultMonth={dateRange?.from}
+                                                                                    selected={dateRange}
+                                                                                    onSelect={(value) => {
+                                                                                        const range = value as { from?: Date; to?: Date } | undefined
+                                                                                        setDateRange(range as DateRange)
+
+                                                                                        if (activeField === "from" && range?.from) {
+                                                                                            if (!range.to) setActiveField("to")
+                                                                                            else setActiveField(null)
+                                                                                        } else if (activeField === "to" && range?.to) {
+                                                                                            setActiveField(null)
+                                                                                        }
+
+                                                                                        if (range?.from && range?.to) {
+                                                                                            const days = differenceInDays(range.to, range.from) + 1
+                                                                                            if (days > 0) {
+                                                                                                field.onChange(days)
+                                                                                                form.setValue("startDate", range.from.toISOString())
+                                                                                                form.setValue("endDate", range.to.toISOString())
+                                                                                            }
+                                                                                        } else {
+                                                                                            field.onChange(0)
+                                                                                            form.setValue("startDate", undefined)
+                                                                                            form.setValue("endDate", undefined)
+                                                                                        }
+                                                                                    }}
+                                                                                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                                                                />
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    )}
+                                                                </AnimatePresence>
+                                                            </div>
+
+                                                            {/* Total Days Summary */}
+                                                            <div className="text-center">
+                                                                <AnimatePresence mode="wait">
+                                                                    {field.value > 0 ? (
+                                                                        <motion.div
+                                                                            initial={{ opacity: 0, y: 10 }}
+                                                                            animate={{ opacity: 1, y: 0 }}
+                                                                            exit={{ opacity: 0, y: -10 }}
+                                                                            className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-primary/10 text-primary"
+                                                                        >
+                                                                            <Activity className="w-4 h-4" />
+                                                                            <span className="font-semibold text-lg">
+                                                                                {field.value} {field.value === 1 ? "Day" : "Days"} Trip
+                                                                            </span>
+                                                                        </motion.div>
+                                                                    ) : (
+                                                                        <motion.p
+                                                                            initial={{ opacity: 0 }}
+                                                                            animate={{ opacity: 1 }}
+                                                                            className="text-muted-foreground italic"
+                                                                        >
+                                                                            Select dates to calculate duration
+                                                                        </motion.p>
+                                                                    )}
+                                                                </AnimatePresence>
+                                                            </div>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </>
                                         )}
 
                                         {/* Step 3: Budget */}
@@ -596,7 +711,12 @@ export default function CreateItineraryPage() {
                                     </Button>
 
                                     {step < STEPS.length ? (
-                                        <Button type="button" onClick={nextStep} className="gap-2 rounded-full px-6">
+                                        <Button
+                                            type="button"
+                                            onClick={nextStep}
+                                            className="gap-2 rounded-full px-6"
+                                            disabled={step === 2 && form.watch("numDays") === 0}
+                                        >
                                             Next <ArrowRight className="w-4 h-4" />
                                         </Button>
                                     ) : (
@@ -613,8 +733,8 @@ export default function CreateItineraryPage() {
                             </form>
                         </Form>
                     </div>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     )
 }
