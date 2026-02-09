@@ -32,6 +32,29 @@ export async function POST(req: Request) {
             )
         }
 
+        // Check if user exists and get current password
+        const user = await prisma.user.findUnique({
+            where: { email },
+        })
+
+        if (!user) {
+            return NextResponse.json(
+                { message: "User not found" },
+                { status: 404 }
+            )
+        }
+
+        // Check if new password is same as old password
+        if (user.passwordHash) {
+            const isSamePassword = await bcrypt.compare(newPassword, user.passwordHash)
+            if (isSamePassword) {
+                return NextResponse.json(
+                    { message: "New password cannot be the same as the old password" },
+                    { status: 400 }
+                )
+            }
+        }
+
         // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10)
 

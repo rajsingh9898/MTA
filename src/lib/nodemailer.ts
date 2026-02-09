@@ -37,6 +37,7 @@ export async function sendOtpEmail(email: string, otp: string, type: 'verificati
             subject: subject, // Subject line
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <p style="color: #555; font-weight: bold;"><b>This is system generated mail. Please do not reply it.</b></p>
                     <h2>${title}</h2>
                     <p>${message}</p>
                     <div style="background-color: #f4f4f4; padding: 15px; text-align: center; border-radius: 5px; font-size: 24px; letter-spacing: 5px; font-weight: bold;">
@@ -44,6 +45,10 @@ export async function sendOtpEmail(email: string, otp: string, type: 'verificati
                     </div>
                     <p>This code will expire in 10 minutes.</p>
                     <p>If you didn't request this, please ignore this email.</p>
+                    <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px;">
+                        Thanks & Regards,<br>
+                        MTA Team
+                    </div>
                 </div>
             `,
         });
