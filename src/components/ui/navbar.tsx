@@ -61,8 +61,12 @@ export function Navbar() {
                             href="/"
                             className="flex items-center gap-2 group"
                         >
-                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                                <Home className="w-4 h-4 text-primary" />
+                            <div className="relative w-8 h-8 rounded-lg overflow-hidden">
+                                <img
+                                    src="/mta.jpeg"
+                                    alt="MTA Logo"
+                                    className="object-cover w-full h-full"
+                                />
                             </div>
                             <span className="font-display text-xl font-semibold tracking-tight">
                                 MTA
@@ -133,8 +137,12 @@ export function Navbar() {
                                     className="flex items-center gap-2"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
-                                        <Home className="w-4 h-4 text-primary" />
+                                    <div className="relative w-8 h-8 rounded-lg overflow-hidden">
+                                        <img
+                                            src="/mta.jpeg"
+                                            alt="MTA Logo"
+                                            className="object-cover w-full h-full"
+                                        />
                                     </div>
                                     <span className="font-display text-xl font-semibold tracking-tight">
                                         MTA

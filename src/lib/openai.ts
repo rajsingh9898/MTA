@@ -1,9 +1,7 @@
 import OpenAI from "openai"
-
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 })
-
 export async function generateItineraryWithOpenAI(
     prompt: string,
     systemPrompt: string
@@ -11,7 +9,6 @@ export async function generateItineraryWithOpenAI(
     if (!process.env.OPENAI_API_KEY) {
         throw new Error("OPENAI_API_KEY is not set")
     }
-
     try {
         const completion = await openai.chat.completions.create({
             messages: [
@@ -21,7 +18,6 @@ export async function generateItineraryWithOpenAI(
             model: "gpt-4o",
             response_format: { type: "json_object" },
         })
-
         return completion.choices[0].message.content
     } catch (error: any) {
         console.error("OpenAI API Error:", error.message)

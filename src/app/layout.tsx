@@ -20,6 +20,11 @@ export const metadata: Metadata = {
     description: "Create personalized travel itineraries in seconds with AI.",
     type: "website",
   },
+  icons: {
+    icon: "/mta.jpeg",
+    shortcut: "/mta.jpeg",
+    apple: "/mta.jpeg",
+  },
 };
 
 export default function RootLayout({

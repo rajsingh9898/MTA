@@ -221,7 +221,8 @@ IMPORTANT RULES:
 2. DESTINATION-AWARE PRICING: Adjust all cost estimates based on ${destination}'s local economy. The same budget tier means different absolute amounts in different places (e.g., "Moderate" in Bhimtal might be ₹3,000/day but in Paris could be ₹15,000/day).
 3. ${dietaryContext}
 4. ${accessibilityContext}
-5. ${interestsContext}`
+5. ${interestsContext}
+6. Include 3-4 top hotel recommendations that fit the budget and style.`
 
         const userPrompt = `
           Create a ${numDays}-day itinerary for ${destination} based on these preferences:
@@ -265,7 +266,17 @@ IMPORTANT RULES:
               "totalEstimatedCost": "string (in INR)",
               "totalActivities": number,
               "keyHighlights": ["string"]
-            }
+            },
+            "hotels": [
+              {
+                "name": "string",
+                "rating": "string (e.g. 4.5/5)",
+                "priceRange": "string (in INR, e.g. ₹3,000-5,000/night)",
+                "description": "string",
+                "address": "string (optional)",
+                "amenities": ["string"]
+              }
+            ]
           }
         `
 

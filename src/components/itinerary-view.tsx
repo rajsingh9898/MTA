@@ -1,6 +1,14 @@
 "use client"
 
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { motion } from "framer-motion"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -12,8 +20,23 @@ import {
     IndianRupee,
     Sparkles,
     ChevronRight,
-    ArrowLeft
+    ArrowLeft,
+    Check,
+    X,
+    RefreshCw,
+    Loader2
 } from "lucide-react"
+
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+
 
 import { Button } from "@/components/ui/button"
 import { ShareItineraryButton } from "@/components/share-itinerary-button"
@@ -52,6 +75,14 @@ interface ItineraryData {
         startDate?: string
         endDate?: string
     }
+    hotels?: {
+        name: string
+        rating: string
+        priceRange: string
+        description: string
+        address?: string
+        amenities: string[]
+    }[]
 }
 
 interface Itinerary {
@@ -69,7 +100,9 @@ interface Itinerary {
     endDate?: string | Date | null
     shareToken: string | null
     isPublic: boolean
+    status: string
 }
+
 
 interface ItineraryViewProps {
     itinerary: Itinerary
@@ -83,6 +116,60 @@ interface ItineraryViewProps {
 }
 
 export function ItineraryView({ itinerary, data, imageUrl, photographer, photographerUrl, user }: ItineraryViewProps) {
+    const router = useRouter()
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [showUpdateDialog, setShowUpdateDialog] = useState(false)
+    const [feedback, setFeedback] = useState("")
+
+    async function handleStatusUpdate(status: "ACCEPTED" | "DECLINED") {
+        try {
+            const response = await fetch(`/api/itinerary/${itinerary.id}/status`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status }),
+            })
+
+            if (!response.ok) throw new Error("Failed to update status")
+
+            if (status === "ACCEPTED") {
+                toast.success("Itinerary accepted! It's now on your dashboard.")
+                router.push("/dashboard")
+                router.refresh()
+            } else {
+                toast.success("Itinerary declined.")
+                router.push("/create") // Or dashboard
+                router.refresh()
+            }
+        } catch (error) {
+            toast.error("Something went wrong. Please try again.")
+        }
+    }
+
+    async function handleRegenerate() {
+        if (!feedback.trim()) return
+
+        setIsUpdating(true)
+        try {
+            const response = await fetch(`/api/itinerary/${itinerary.id}/update`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ feedback }),
+            })
+
+            if (!response.ok) throw new Error("Failed to update itinerary")
+
+            const result = await response.json()
+            toast.success("Itinerary updated based on your feedback!")
+            setShowUpdateDialog(false)
+            setFeedback("")
+            router.refresh()
+        } catch (error) {
+            toast.error("Failed to regenerate itinerary. Please try again.")
+        } finally {
+            setIsUpdating(false)
+        }
+    }
+
     // Handle case where data is not available
     if (!data || !data.overview) {
         return (
@@ -204,6 +291,94 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                         <DeleteItineraryButton id={itinerary.id} />
                     </motion.div>
 
+                    {/* DRAFT STATUS ACTION BAR */}
+                    {itinerary.status === "DRAFT" && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="fixed bottom-6 left-0 right-0 z-50 px-4 pointer-events-none"
+                        >
+                            <div className="max-w-xl mx-auto bg-background/80 backdrop-blur-md border border-border shadow-2xl rounded-full p-2 flex items-center justify-between gap-2 pointer-events-auto">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    onClick={() => handleStatusUpdate("DECLINED")}
+                                    className="rounded-full text-destructive hover:text-destructive hover:bg-destructive/10 border-transparent"
+                                >
+                                    <X className="w-4 h-4 mr-2" />
+                                    Decline
+                                </Button>
+
+                                <div className="h-8 w-px bg-border" />
+
+                                <Button
+                                    variant="ghost"
+                                    size="lg"
+                                    onClick={() => setShowUpdateDialog(true)}
+                                    className="rounded-full"
+                                >
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Update
+                                </Button>
+
+                                <Button
+                                    size="lg"
+                                    onClick={() => handleStatusUpdate("ACCEPTED")}
+                                    className="rounded-full px-8 bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                    <Check className="w-4 h-4 mr-2" />
+                                    Accept
+                                </Button>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Update Dialog */}
+                    <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Update Itinerary</DialogTitle>
+                                <DialogDescription>
+                                    What would you like to change? Our AI will regenerate the itinerary based on your feedback.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                                <Textarea
+                                    placeholder="e.g. I want more outdoor activities, or swap the museum for a hiking trip."
+                                    value={feedback}
+                                    onChange={(e) => setFeedback(e.target.value)}
+                                    className="min-h-[100px]"
+                                />
+                            </div>
+                            <DialogFooter>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowUpdateDialog(false)}
+                                    disabled={isUpdating}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleRegenerate}
+                                    disabled={!feedback.trim() || isUpdating}
+                                >
+                                    {isUpdating ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="w-4 h-4 mr-2" />
+                                            Regenerate
+                                        </>
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+
                     {/* Overview Cards */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -255,6 +430,57 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                     >
                                         {highlight}
                                     </span>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Hotel Recommendations */}
+                    {data.hotels && data.hotels.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.35 }}
+                            className="mb-12"
+                        >
+                            <h2 className="text-2xl font-display font-semibold mb-6">Where to Stay</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {data.hotels.map((hotel, idx) => (
+                                    <div key={idx} className="bg-card border border-border/60 rounded-2xl p-6 flex flex-col h-full hover:border-primary/50 transition-colors">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <h3 className="font-semibold text-lg line-clamp-1">{hotel.name}</h3>
+                                            <span className="flex items-center text-sm font-medium bg-primary/10 text-primary px-2 py-1 rounded-md">
+                                                ★ {hotel.rating}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-grow">
+                                            {hotel.description}
+                                        </p>
+                                        <div className="space-y-3 mt-auto">
+                                            <div className="flex items-center text-sm text-muted-foreground">
+                                                <Wallet className="w-4 h-4 mr-2" />
+                                                {hotel.priceRange}
+                                            </div>
+                                            {hotel.address && (
+                                                <div className="flex items-center text-sm text-muted-foreground">
+                                                    <MapPin className="w-4 h-4 mr-2" />
+                                                    <span className="line-clamp-1">{hotel.address}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex flex-wrap gap-2 pt-2">
+                                                {hotel.amenities.slice(0, 3).map((amenity, i) => (
+                                                    <span key={i} className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+                                                        {amenity}
+                                                    </span>
+                                                ))}
+                                                {hotel.amenities.length > 3 && (
+                                                    <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+                                                        +{hotel.amenities.length - 3}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         </motion.div>
@@ -342,6 +568,6 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

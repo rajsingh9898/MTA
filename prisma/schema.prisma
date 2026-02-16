@@ -61,6 +61,7 @@ model Itinerary {
   // Sharing
   shareToken      String?  @unique @map("share_token")
   isPublic        Boolean  @default(false) @map("is_public")
+  status          String   @default("DRAFT") // "DRAFT", "ACCEPTED", "DECLINED"
   
   // Generated Itinerary (JSONB)
   itineraryData   Json     @map("itinerary_data")
@@ -81,4 +82,3 @@ model Itinerary {
   @@index([shareToken])
   @@map("itineraries")
 }
-

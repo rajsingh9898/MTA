@@ -21,6 +21,7 @@ export default async function DashboardPage() {
         where: {
             userId: session.user.id,
             deletedAt: null,
+            status: "ACCEPTED",
         },
         orderBy: {
             createdAt: "desc",
