@@ -287,51 +287,40 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                 userName: user?.name || undefined,
                             }
                         }} />
-                        <div className="flex-1" />
-                        <DeleteItineraryButton id={itinerary.id} />
-                    </motion.div>
 
-                    {/* DRAFT STATUS ACTION BAR */}
-                    {itinerary.status === "DRAFT" && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="fixed bottom-6 left-0 right-0 z-50 px-4 pointer-events-none"
-                        >
-                            <div className="max-w-xl mx-auto bg-background/80 backdrop-blur-md border border-border shadow-2xl rounded-full p-2 flex items-center justify-between gap-2 pointer-events-auto">
+                        <div className="flex-1" />
+
+                        {itinerary.status === "DRAFT" && (
+                            <div className="flex items-center gap-2 mr-2">
                                 <Button
                                     variant="outline"
-                                    size="lg"
                                     onClick={() => handleStatusUpdate("DECLINED")}
-                                    className="rounded-full text-destructive hover:text-destructive hover:bg-destructive/10 border-transparent"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                 >
                                     <X className="w-4 h-4 mr-2" />
                                     Decline
                                 </Button>
 
-                                <div className="h-8 w-px bg-border" />
-
                                 <Button
                                     variant="ghost"
-                                    size="lg"
                                     onClick={() => setShowUpdateDialog(true)}
-                                    className="rounded-full"
                                 >
                                     <RefreshCw className="w-4 h-4 mr-2" />
                                     Update
                                 </Button>
 
                                 <Button
-                                    size="lg"
                                     onClick={() => handleStatusUpdate("ACCEPTED")}
-                                    className="rounded-full px-8 bg-green-600 hover:bg-green-700 text-white"
+                                    className="bg-green-600 hover:bg-green-700 text-white"
                                 >
                                     <Check className="w-4 h-4 mr-2" />
                                     Accept
                                 </Button>
                             </div>
-                        </motion.div>
-                    )}
+                        )}
+
+                        <DeleteItineraryButton id={itinerary.id} />
+                    </motion.div>
 
                     {/* Update Dialog */}
                     <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>

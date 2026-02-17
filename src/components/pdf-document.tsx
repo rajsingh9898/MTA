@@ -12,8 +12,13 @@ const styles = StyleSheet.create({
     page: {
         flexDirection: "column",
         backgroundColor: "#FFFFFF",
-        padding: 30,
         fontFamily: "Helvetica",
+    },
+    contentWrapper: {
+        paddingTop: 50,
+        paddingBottom: 60,
+        paddingHorizontal: 35,
+        flex: 1,
     },
     header: {
         marginBottom: 20,
@@ -128,47 +133,84 @@ export function PdfDocument({ data }: { data: ItineraryData }) {
                         minHeight: '100%',
                         height: '100%',
                         width: '100%',
+                        top: 0,
+                        left: 0,
                         opacity: 0.1, // Low opacity for background
                         zIndex: -1,
                     }}
                     fixed
                 />
 
-                <View style={styles.header}>
-                    {/* Logo and MTA Title Row */}
-                    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
-                        <Image
-                            src="/mta.jpeg"
-                            style={{ width: 50, height: 50, objectFit: 'contain', marginRight: 10 }}
-                        />
-                        <Text style={{ fontSize: 24, fontWeight: "bold", color: "#2563EB" }}>MTA</Text>
+                <View style={styles.contentWrapper}>
+                    <View style={styles.header}>
+                        {/* Logo and MTA Title Row */}
+                        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
+                            <Image
+                                src="/mta.jpeg"
+                                style={{ width: 50, height: 50, objectFit: 'contain', marginRight: 10 }}
+                            />
+                            <Text style={{ fontSize: 24, fontWeight: "bold", color: "#2563EB" }}>MTA</Text>
+                        </View>
+
+                        {/* Details Rows */}
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10 }}>
+                            {/* Left Column */}
+                            <View>
+                                {data.tripMetadata?.userName && (
+                                    <Text style={{ fontSize: 14, color: "#1E293B", marginBottom: 5 }}>
+                                        <Text style={{ fontWeight: "bold", color: "#64748B" }}>Traveller Name: </Text>
+                                        {data.tripMetadata.userName}
+                                    </Text>
+                                )}
+                                <Text style={{ fontSize: 14, color: "#1E293B", marginBottom: 5 }}>
+                                    <Text style={{ fontWeight: "bold", color: "#64748B" }}>Destination (Venue): </Text>
+                                    {data.overview.destination}
+                                </Text>
+                            </View>
+
+                            {/* Right Column */}
+                            <View style={{ alignItems: "flex-end" }}>
+                                <Text style={{ fontSize: 14, color: "#1E293B", marginBottom: 5 }}>
+                                    <Text style={{ fontWeight: "bold", color: "#64748B" }}>Duration: </Text>
+                                    {data.overview.duration}
+                                </Text>
+                                {data.tripMetadata?.startDate && data.tripMetadata?.endDate && (
+                                    <Text style={{ fontSize: 14, color: "#1E293B" }}>
+                                        <Text style={{ fontWeight: "bold", color: "#64748B" }}>Dates: </Text>
+                                        {new Date(data.tripMetadata.startDate).toLocaleDateString()} - {new Date(data.tripMetadata.endDate).toLocaleDateString()}
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
                     </View>
 
-                    {/* Centered Details Block */}
-                    <View style={{ alignItems: "center", marginBottom: 10 }}>
-                        {data.tripMetadata?.userName && (
-                            <Text style={{ fontSize: 14, color: "#1E293B", marginBottom: 5 }}>
-                                <Text style={{ fontWeight: "bold", color: "#64748B" }}>Traveller Name: </Text>
-                                {data.tripMetadata.userName}
+                    {data.days.map((day) => (
+                        <View key={day.day}>
+                            <Text style={styles.dayHeader}>
+                                Day {day.day} - {day.dailyCost.replace(/₹/g, "Rs. ")}
                             </Text>
-                        )}
+                            {day.activities.map((activity, index) => (
+                                <View key={index} style={styles.activity}>
+                                    <Text style={styles.timeSlot}>{activity.timeSlot}</Text>
+                                    <Text style={styles.activityName}>{activity.name}</Text>
+                                    <Text style={styles.description}>{activity.description}</Text>
+                                    <Text style={styles.cost}>Cost: {activity.cost.replace(/₹/g, "Rs. ")}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    ))}
 
-                        <Text style={{ fontSize: 14, color: "#1E293B", marginBottom: 5 }}>
-                            <Text style={{ fontWeight: "bold", color: "#64748B" }}>Destination (Venue): </Text>
-                            {data.overview.destination}
+                    <View style={styles.summary}>
+                        <Text style={styles.summaryTitle}>Trip Summary</Text>
+                        <Text style={styles.summaryText}>
+                            Total Estimated Cost: {data.summary.totalEstimatedCost.replace(/₹/g, "Rs. ")}
                         </Text>
-
-                        <Text style={{ fontSize: 14, color: "#1E293B", marginBottom: 5 }}>
-                            <Text style={{ fontWeight: "bold", color: "#64748B" }}>Duration: </Text>
-                            {data.overview.duration}
+                        <Text style={styles.summaryText}>
+                            Total Activities: {data.summary.totalActivities}
                         </Text>
-
-                        {data.tripMetadata?.startDate && data.tripMetadata?.endDate && (
-                            <Text style={{ fontSize: 14, color: "#1E293B" }}>
-                                <Text style={{ fontWeight: "bold", color: "#64748B" }}>Dates: </Text>
-                                {new Date(data.tripMetadata.startDate).toLocaleDateString()} - {new Date(data.tripMetadata.endDate).toLocaleDateString()}
-                            </Text>
-                        )}
+                        <Text style={styles.summaryText}>
+                            Highlights: {data.summary.keyHighlights.join(", ")}
+                        </Text>
                     </View>
                 </View>
 
@@ -186,35 +228,6 @@ export function PdfDocument({ data }: { data: ItineraryData }) {
                 >
                     Generated by MTA Planner
                 </Text>
-
-                {data.days.map((day) => (
-                    <View key={day.day}>
-                        <Text style={styles.dayHeader}>
-                            Day {day.day} - {day.dailyCost.replace(/₹/g, "Rs. ")}
-                        </Text>
-                        {day.activities.map((activity, index) => (
-                            <View key={index} style={styles.activity}>
-                                <Text style={styles.timeSlot}>{activity.timeSlot}</Text>
-                                <Text style={styles.activityName}>{activity.name}</Text>
-                                <Text style={styles.description}>{activity.description}</Text>
-                                <Text style={styles.cost}>Cost: {activity.cost.replace(/₹/g, "Rs. ")}</Text>
-                            </View>
-                        ))}
-                    </View>
-                ))}
-
-                <View style={styles.summary}>
-                    <Text style={styles.summaryTitle}>Trip Summary</Text>
-                    <Text style={styles.summaryText}>
-                        Total Estimated Cost: {data.summary.totalEstimatedCost.replace(/₹/g, "Rs. ")}
-                    </Text>
-                    <Text style={styles.summaryText}>
-                        Total Activities: {data.summary.totalActivities}
-                    </Text>
-                    <Text style={styles.summaryText}>
-                        Highlights: {data.summary.keyHighlights.join(", ")}
-                    </Text>
-                </View>
             </Page>
         </Document>
     )
