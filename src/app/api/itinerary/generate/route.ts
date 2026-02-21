@@ -109,7 +109,7 @@ function generateMockItinerary(destination: string, numDays: number, budget: str
         whyRecommended: "Offers a unique perspective on the city."
       }
     ],
-    transportation: "Public transit is convenient and affordable (approx ₹200/day).",
+    transportation: "Public transit is convenient and affordable (approx ₹200)",
     dailyCost: budget === "Economy" ? "₹2000-3000" : budget === "Luxury" ? "₹10000+" : "₹4000-6000"
   }));
 
@@ -258,7 +258,7 @@ IMPORTANT RULES:
                     "dietaryOptions": "string (optional, for restaurants only)"
                   }
                 ],
-                "transportation": "string",
+                "transportation": "string (MUST include an estimated numerical cost in INR, e.g. 'Metro and walking (₹500)')",
                 "dailyCost": "string (in INR)"
               }
             ],

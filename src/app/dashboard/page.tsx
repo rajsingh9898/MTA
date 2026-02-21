@@ -43,7 +43,7 @@ export default async function DashboardPage() {
     }, {} as Record<string, string>)
 
     // Get first name for greeting
-    const firstName = session.user.email?.split("@")[0] || "Traveler"
+    const firstName = session.user.name || session.user.email?.split("@")[0] || "Traveler"
 
     return (
         <div className="min-h-screen">

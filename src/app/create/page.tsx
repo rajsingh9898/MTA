@@ -441,7 +441,13 @@ export default function CreateItineraryPage() {
                                                                                             form.setValue("endDate", undefined)
                                                                                         }
                                                                                     }}
-                                                                                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                                                                    disabled={(date) => {
+                                                                                        const today = new Date(new Date().setHours(0, 0, 0, 0))
+                                                                                        if (activeField === "to" && dateRange?.from) {
+                                                                                            return date < new Date(new Date(dateRange.from).setHours(0, 0, 0, 0))
+                                                                                        }
+                                                                                        return date < today
+                                                                                    }}
                                                                                 />
                                                                             </div>
                                                                         </motion.div>

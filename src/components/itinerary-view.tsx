@@ -24,7 +24,9 @@ import {
     Check,
     X,
     RefreshCw,
-    Loader2
+    Loader2,
+    Pencil,
+    Trash2
 } from "lucide-react"
 
 import {
@@ -36,6 +38,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 
 
 import { Button } from "@/components/ui/button"
@@ -120,6 +123,20 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
     const [isUpdating, setIsUpdating] = useState(false)
     const [showUpdateDialog, setShowUpdateDialog] = useState(false)
     const [feedback, setFeedback] = useState("")
+    const [selectedUpdateReason, setSelectedUpdateReason] = useState<string>("")
+
+    const updateReasons = [
+        "Slower pace with more free time",
+        "More outdoor and nature activities",
+        "Cheaper/budget-friendly options",
+        "Focus more on historical sites",
+        "More family-friendly activities",
+        "Other (Write your own)"
+    ]
+
+    const [editingDay, setEditingDay] = useState<Day | null>(null)
+    const [removingDay, setRemovingDay] = useState<number | null>(null)
+    const [isSavingDay, setIsSavingDay] = useState(false)
 
     async function handleStatusUpdate(status: "ACCEPTED" | "DECLINED") {
         try {
@@ -146,14 +163,18 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
     }
 
     async function handleRegenerate() {
-        if (!feedback.trim()) return
+        const finalFeedback = selectedUpdateReason === "Other (Write your own)" || !selectedUpdateReason
+            ? feedback
+            : `${selectedUpdateReason}. ${feedback}`;
+
+        if (!finalFeedback.trim()) return
 
         setIsUpdating(true)
         try {
             const response = await fetch(`/api/itinerary/${itinerary.id}/update`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ feedback }),
+                body: JSON.stringify({ feedback: finalFeedback }),
             })
 
             if (!response.ok) throw new Error("Failed to update itinerary")
@@ -162,11 +183,153 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
             toast.success("Itinerary updated based on your feedback!")
             setShowUpdateDialog(false)
             setFeedback("")
+            setSelectedUpdateReason("")
             router.refresh()
         } catch (error) {
             toast.error("Failed to regenerate itinerary. Please try again.")
         } finally {
             setIsUpdating(false)
+        }
+    }
+
+    // Helper to calculate total costs based on activities
+    function calculateTotalCost(days: Day[], partySize: number) {
+        let total = 0
+        days.forEach(day => {
+            let dayTotal = 0
+            day.activities.forEach(activity => {
+                // Remove commas and extract numbers from cost string (e.g. "₹5,000", "Free", "$10")
+                const costNumber = activity.cost.replace(/,/g, '').match(/\d+/)
+                if (costNumber) {
+                    let cost = parseInt(costNumber[0], 10)
+                    if (activity.cost.toLowerCase().includes("per person")) {
+                        cost = cost * partySize
+                    }
+                    dayTotal += cost
+                }
+            })
+
+            // Add transportation cost if available
+            if (day.transportation) {
+                const transMatch = day.transportation.replace(/,/g, '').match(/\d+/)
+                if (transMatch) {
+                    let tCost = parseInt(transMatch[0], 10)
+                    if (day.transportation.toLowerCase().includes("per person")) {
+                        tCost = tCost * partySize
+                    }
+                    dayTotal += tCost
+                }
+            }
+
+            // Update day's dailyCost
+            day.dailyCost = `₹${dayTotal.toLocaleString("en-IN")}`
+            total += dayTotal
+        })
+        return `₹${total.toLocaleString("en-IN")}`
+    }
+
+    // Helper to extract and sum transportation costs across all days
+    function calculateTotalTransportationCost(days: Day[]) {
+        let total = 0
+        days.forEach(day => {
+            if (!day.transportation) return
+            const match = day.transportation.replace(/,/g, '').match(/\d+/)
+            if (match) {
+                let tCost = parseInt(match[0], 10)
+                if (day.transportation.toLowerCase().includes("per person") && itinerary?.partySize) {
+                    tCost = tCost * itinerary.partySize
+                }
+                total += tCost
+            }
+        })
+        return total > 0 ? `₹${total.toLocaleString("en-IN")}` : "N/A"
+    }
+
+    async function handleSaveDay() {
+        if (!editingDay) return
+        setIsSavingDay(true)
+        try {
+            const updatedDays = data.days.map(d => d.day === editingDay.day ? editingDay : d)
+
+            const newTotalCost = calculateTotalCost(updatedDays, itinerary.partySize)
+            const numDays = updatedDays.length
+            const totalActivities = updatedDays.reduce((acc, day) => acc + day.activities.length, 0)
+
+            const updatedData = {
+                ...data,
+                days: updatedDays,
+                overview: {
+                    ...data.overview,
+                    totalEstimatedCost: newTotalCost,
+                    duration: `${numDays} days`
+                },
+                summary: {
+                    ...data.summary,
+                    totalEstimatedCost: newTotalCost,
+                    totalActivities
+                }
+            }
+
+            const response = await fetch(`/api/itinerary/${itinerary.id}/update-data`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ itineraryData: updatedData, numDays }),
+            })
+
+            if (!response.ok) throw new Error("Failed to save day")
+
+            toast.success("Day updated successfully!")
+            setEditingDay(null)
+            router.refresh()
+        } catch (error) {
+            toast.error("Failed to update day. Please try again.")
+        } finally {
+            setIsSavingDay(false)
+        }
+    }
+
+    async function handleRemoveDayConfirm() {
+        if (removingDay === null) return
+        setIsSavingDay(true)
+        try {
+            const updatedDays = data.days.filter(d => d.day !== removingDay)
+            // Optional: Re-number the days in updatedDays
+            updatedDays.forEach((d, idx) => { d.day = idx + 1 })
+
+            const newTotalCost = calculateTotalCost(updatedDays, itinerary.partySize)
+            const numDays = updatedDays.length
+            const totalActivities = updatedDays.reduce((acc, day) => acc + day.activities.length, 0)
+
+            const updatedData = {
+                ...data,
+                days: updatedDays,
+                overview: {
+                    ...data.overview,
+                    totalEstimatedCost: newTotalCost,
+                    duration: `${numDays} days`
+                },
+                summary: {
+                    ...data.summary,
+                    totalEstimatedCost: newTotalCost,
+                    totalActivities
+                }
+            }
+
+            const response = await fetch(`/api/itinerary/${itinerary.id}/update-data`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ itineraryData: updatedData, numDays }),
+            })
+
+            if (!response.ok) throw new Error("Failed to remove day")
+
+            toast.success("Day removed successfully!")
+            setRemovingDay(null)
+            router.refresh()
+        } catch (error) {
+            toast.error("Failed to remove day. Please try again.")
+        } finally {
+            setIsSavingDay(false)
         }
     }
 
@@ -273,20 +436,31 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                         transition={{ duration: 0.4, delay: 0.1 }}
                         className="flex flex-wrap items-center gap-3 mb-10 pb-6 border-b border-border"
                     >
-                        <ShareItineraryButton
-                            itineraryId={itinerary.id}
-                            initialShareUrl={itinerary.shareToken ? `${typeof window !== 'undefined' ? window.location.origin : ''}/share/${itinerary.shareToken}` : null}
-                            initialIsPublic={itinerary.isPublic}
-                        />
-                        <ExportPdfButton data={{
-                            ...data,
-                            tripMetadata: {
-                                name: itinerary.name || undefined,
-                                startDate: itinerary.startDate ? new Date(itinerary.startDate).toISOString() : undefined,
-                                endDate: itinerary.endDate ? new Date(itinerary.endDate).toISOString() : undefined,
-                                userName: user?.name || undefined,
-                            }
-                        }} />
+                        {itinerary.status === "DRAFT" ? (
+                            <Button asChild variant="outline">
+                                <a href="#day-by-day-plan">
+                                    <Sparkles className="w-4 h-4 mr-2" />
+                                    View
+                                </a>
+                            </Button>
+                        ) : (
+                            <>
+                                <ShareItineraryButton
+                                    itineraryId={itinerary.id}
+                                    initialShareUrl={itinerary.shareToken ? `${typeof window !== 'undefined' ? window.location.origin : ''}/share/${itinerary.shareToken}` : null}
+                                    initialIsPublic={itinerary.isPublic}
+                                />
+                                <ExportPdfButton data={{
+                                    ...data,
+                                    tripMetadata: {
+                                        name: itinerary.name || undefined,
+                                        startDate: itinerary.startDate ? new Date(itinerary.startDate).toISOString() : undefined,
+                                        endDate: itinerary.endDate ? new Date(itinerary.endDate).toISOString() : undefined,
+                                        userName: user?.name || undefined,
+                                    }
+                                }} />
+                            </>
+                        )}
 
                         <div className="flex-1" />
 
@@ -328,28 +502,53 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                             <DialogHeader>
                                 <DialogTitle>Update Itinerary</DialogTitle>
                                 <DialogDescription>
-                                    What would you like to change? Our AI will regenerate the itinerary based on your feedback.
+                                    Select a reason below, or describe what you would like to change. Our AI will regenerate the itinerary based on your feedback.
                                 </DialogDescription>
                             </DialogHeader>
-                            <div className="py-4">
-                                <Textarea
-                                    placeholder="e.g. I want more outdoor activities, or swap the museum for a hiking trip."
-                                    value={feedback}
-                                    onChange={(e) => setFeedback(e.target.value)}
-                                    className="min-h-[100px]"
-                                />
+                            <div className="py-4 space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {updateReasons.map((reason) => (
+                                        <Button
+                                            key={reason}
+                                            type="button"
+                                            variant={selectedUpdateReason === reason ? "default" : "outline"}
+                                            className="justify-start text-left h-auto py-2 px-3 whitespace-normal"
+                                            onClick={() => {
+                                                setSelectedUpdateReason(reason);
+                                                if (reason !== "Other (Write your own)") {
+                                                    setFeedback("");
+                                                }
+                                            }}
+                                        >
+                                            {reason}
+                                        </Button>
+                                    ))}
+                                </div>
+
+                                {(selectedUpdateReason === "Other (Write your own)" || selectedUpdateReason !== "") && (
+                                    <Textarea
+                                        placeholder={selectedUpdateReason === "Other (Write your own)" ? "e.g. I want more outdoor activities, or swap the museum for a hiking trip." : "Any additional details (optional)"}
+                                        value={feedback}
+                                        onChange={(e) => setFeedback(e.target.value)}
+                                        className="min-h-[100px]"
+                                    />
+                                )}
                             </div>
                             <DialogFooter>
                                 <Button
                                     variant="outline"
-                                    onClick={() => setShowUpdateDialog(false)}
+                                    onClick={() => {
+                                        setShowUpdateDialog(false)
+                                        setSelectedUpdateReason("")
+                                        setFeedback("")
+                                    }}
                                     disabled={isUpdating}
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     onClick={handleRegenerate}
-                                    disabled={!feedback.trim() || isUpdating}
+                                    disabled={(!feedback.trim() && selectedUpdateReason === "Other (Write your own)") || (!feedback.trim() && !selectedUpdateReason) || isUpdating}
                                 >
                                     {isUpdating ? (
                                         <>
@@ -373,12 +572,26 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
+                        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-12"
                     >
+                        <div className="bg-card border border-border/60 rounded-2xl p-5 flex flex-col justify-between">
+                            <div>
+                                <p className="label mb-2">Total Budget</p>
+                                <p className="text-xl font-semibold flex items-center gap-1">
+                                    {data.overview.totalEstimatedCost || data.summary?.totalEstimatedCost}
+                                </p>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-2 leading-tight">
+                                *Transportation charges not included
+                            </p>
+                        </div>
                         <div className="bg-card border border-border/60 rounded-2xl p-5">
-                            <p className="label mb-2">Total Budget</p>
+                            <p className="label mb-2">Transportation</p>
                             <p className="text-xl font-semibold flex items-center gap-1">
-                                {data.overview.totalEstimatedCost || data.summary?.totalEstimatedCost}
+                                {data.days ? calculateTotalTransportationCost(data.days) : "N/A"}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-2 leading-tight">
+                                *Approximate sum
                             </p>
                         </div>
                         <div className="bg-card border border-border/60 rounded-2xl p-5">
@@ -476,7 +689,7 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                     )}
 
                     {/* Daily Itinerary */}
-                    <div className="space-y-8">
+                    <div className="space-y-8" id="day-by-day-plan">
                         <h2 className="text-2xl font-display font-semibold">Your Day-by-Day Plan</h2>
 
                         {data.days?.map((day, dayIdx) => (
@@ -496,6 +709,18 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                                 Daily cost: {day.dailyCost}
                                             </p>
                                         </div>
+                                        {itinerary.status === "DRAFT" && (
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="ghost" size="sm" onClick={() => setEditingDay({ ...day })}>
+                                                    <Pencil className="w-4 h-4 mr-2" />
+                                                    Edit
+                                                </Button>
+                                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setRemovingDay(day.day)}>
+                                                    <Trash2 className="w-4 h-4 mr-2" />
+                                                    Remove
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -546,17 +771,175 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                 {/* Transportation Footer */}
                                 {day.transportation && (
                                     <div className="px-6 py-4 bg-secondary/30 border-t border-border/40">
-                                        <div className="flex flex-wrap items-center gap-4">
-                                            <span className="text-sm text-muted-foreground">Transportation:</span>
-                                            <span className="text-sm">{day.transportation}</span>
+                                        <div className="flex flex-wrap items-center justify-between gap-4">
+                                            <div className="flex flex-wrap items-center gap-4">
+                                                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Transportation:</span>
+                                                <span className="text-sm">{day.transportation}</span>
+                                            </div>
+
+                                            {/* Render parsed cost if available */}
+                                            {(() => {
+                                                const match = day.transportation.replace(/,/g, '').match(/\d+/);
+                                                if (match) {
+                                                    let tCost = parseInt(match[0], 10)
+                                                    if (day.transportation.toLowerCase().includes("per person") && itinerary?.partySize) {
+                                                        tCost = tCost * itinerary.partySize
+                                                    }
+                                                    return (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-muted-foreground">Estimated Cost:</span>
+                                                            <span className="text-sm font-semibold text-primary">
+                                                                ₹{tCost.toLocaleString("en-IN")}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                }
+                                                return (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-muted-foreground">Estimated Cost:</span>
+                                                        <span className="text-sm font-medium text-muted-foreground italic">
+                                                            Not specified
+                                                        </span>
+                                                    </div>
+                                                )
+                                            })()}
                                         </div>
                                     </div>
                                 )}
                             </motion.div>
                         ))}
+
+
                     </div>
                 </div>
             </div>
+
+            {/* Remove Day Dialog */}
+            <Dialog open={removingDay !== null} onOpenChange={(open) => !open && setRemovingDay(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Remove Day</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to remove this day from your itinerary? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setRemovingDay(null)} disabled={isSavingDay}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleRemoveDayConfirm} disabled={isSavingDay}>
+                            {isSavingDay ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                            Remove
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Day Dialog */}
+            <Dialog open={editingDay !== null} onOpenChange={(open) => !open && setEditingDay(null)}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Edit Day {editingDay?.day}</DialogTitle>
+                        <DialogDescription>
+                            Customize your activities for this day.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                        {editingDay?.activities.map((activity, idx) => (
+                            <div key={idx} className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-semibold text-sm text-primary">Activity {idx + 1}</h4>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 text-destructive"
+                                        onClick={() => {
+                                            const newActivities = [...editingDay.activities]
+                                            newActivities.splice(idx, 1)
+                                            setEditingDay({ ...editingDay, activities: newActivities })
+                                        }}
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-medium">Time Slot</label>
+                                        <Input
+                                            value={activity.timeSlot}
+                                            onChange={(e) => {
+                                                const newActivities = [...editingDay.activities]
+                                                newActivities[idx].timeSlot = e.target.value
+                                                setEditingDay({ ...editingDay, activities: newActivities })
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-medium">Cost</label>
+                                        <Input
+                                            value={activity.cost}
+                                            disabled
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium">Name</label>
+                                    <Input
+                                        value={activity.name}
+                                        onChange={(e) => {
+                                            const newActivities = [...editingDay.activities]
+                                            newActivities[idx].name = e.target.value
+                                            setEditingDay({ ...editingDay, activities: newActivities })
+                                        }}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium">Description</label>
+                                    <Textarea
+                                        value={activity.description}
+                                        onChange={(e) => {
+                                            const newActivities = [...editingDay.activities]
+                                            newActivities[idx].description = e.target.value
+                                            setEditingDay({ ...editingDay, activities: newActivities })
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                        <Button
+                            variant="outline"
+                            className="w-full border-dashed"
+                            onClick={() => {
+                                setEditingDay({
+                                    ...editingDay!,
+                                    activities: [
+                                        ...editingDay!.activities,
+                                        { timeSlot: "10:00 AM", name: "New Activity", description: "", cost: "Free", whyRecommended: "" }
+                                    ]
+                                })
+                            }}
+                        >
+                            + Add Activity
+                        </Button>
+                        <div className="space-y-2 mt-4 pt-4 border-t">
+                            <label className="text-sm font-medium">Transportation</label>
+                            <Input
+                                value={editingDay?.transportation || ""}
+                                onChange={(e) => setEditingDay({ ...editingDay!, transportation: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditingDay(null)} disabled={isSavingDay}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveDay} disabled={isSavingDay}>
+                            {isSavingDay && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div >
     )
 }

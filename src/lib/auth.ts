@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs"
 export const { handlers, auth, signIn, signOut } = NextAuth({
     session: {
         strategy: "jwt",
+        maxAge: 48 * 60 * 60, // 48 hours
     },
     pages: {
         signIn: "/login",
@@ -66,13 +67,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
             return session
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id
                 token.name = user.name
                 token.phoneNumber = user.phoneNumber
                 token.city = user.city
             }
+
+            // Handle session updates (e.g., when a user updates their profile)
+            if (trigger === "update" && session) {
+                if (session.name) token.name = session.name
+                if (session.phoneNumber !== undefined) token.phoneNumber = session.phoneNumber
+                if (session.city !== undefined) token.city = session.city
+            }
+
             return token
         },
     },

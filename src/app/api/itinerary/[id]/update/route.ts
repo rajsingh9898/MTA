@@ -42,6 +42,7 @@ IMPORTANT RULES:
 2. Maintain the same JSON structure as the input.
 3. Keep the destination and duration the same unless explicitly asked to change.
 4. Ensure all costs are in Indian Rupees (₹).
+5. The "transportation" field for each day MUST include an estimated numerical cost in INR (e.g., "Metro and walking (₹500)").
 `
 
         const userPrompt = `

@@ -12,7 +12,6 @@ import {
     MapPin,
     Calendar,
     Globe,
-    Camera,
     Save,
     Bell,
     Check
@@ -33,7 +32,7 @@ import {
 import { profileStorage } from "@/lib/profile-storage"
 
 export default function ProfilePage() {
-    const { data: session, status } = useSession()
+    const { data: session, status, update } = useSession()
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
@@ -48,8 +47,9 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (session?.user) {
-            setFirstName(session.user.name || "")
-            // setLastName("") // We are not storing last name separately yet
+            const nameParts = (session.user.name || "").split(" ")
+            setFirstName(nameParts[0] || "")
+            setLastName(nameParts.slice(1).join(" ") || "")
             setBio("Passionate traveler exploring the world one destination at a time.")
             setPhone(session.user.phoneNumber || "")
             setLocation(session.user.city || "")
@@ -60,30 +60,28 @@ export default function ProfilePage() {
         setIsSaving(true)
         setSaveSuccess(false)
         try {
-            // Save to localStorage
-            const profileData = {
-                firstName,
-                lastName,
-                bio,
-                phone,
-                location,
-                emailNotifications,
-                pushNotifications
-            }
+            const res = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    firstName,
+                    lastName,
+                    phone,
+                    location
+                })
+            })
 
-            const success = profileStorage.save(profileData)
+            if (res.ok) {
+                // Force NextAuth to pull the latest db values into the session cookie
+                await update({
+                    name: [firstName, lastName].filter(Boolean).join(" "),
+                    phoneNumber: phone,
+                    city: location
+                })
 
-            if (success) {
                 setSaveSuccess(true)
                 // Hide success message after 3 seconds
                 setTimeout(() => setSaveSuccess(false), 3000)
-
-                // In a real app, you would also save to your database:
-                // await fetch('/api/profile', {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json' },
-                //     body: JSON.stringify(profileData)
-                // })
             } else {
                 console.error('Failed to save profile')
             }
@@ -155,22 +153,7 @@ export default function ProfilePage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                {/* Profile Picture */}
-                                <div className="flex items-center gap-6">
-                                    <div className="relative">
-                                        <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-                                            <User className="w-12 h-12 text-primary" />
-                                        </div>
-                                        <button className="absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors">
-                                            <Camera className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-medium">Profile Picture</h3>
-                                        <p className="text-sm text-muted-foreground">Click to upload a new photo</p>
-                                        <p className="text-xs text-muted-foreground">JPG, PNG or GIF. Max 2MB.</p>
-                                    </div>
-                                </div>
+
 
                                 {/* Name Fields */}
                                 <div className="grid grid-cols-2 gap-4">
