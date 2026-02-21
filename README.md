@@ -81,8 +81,8 @@ Travel information and suggestions for 190+ countries worldwide.
 ### 1️⃣ Clone the Repository
 
 
-git clone https://github.com/your-username/mta-planner.git
-cd mta-planner
+git clone https://github.com/rajsingh9898/MTA
+cd project
 
 ##2️⃣ Install Dependencies
 pnpm install
@@ -152,9 +152,9 @@ Submit a Pull Request
 
 This project is licensed under the MIT License.
 
-#👨‍💻 Developer
+# 👨‍💻 Developer
 
 Raj Singh
 AI & Full Stack Developer
 
-##⭐ If you like this project, give it a star on GitHub!
+## ⭐ If you like this project, give it a star on GitHub!
