@@ -29,12 +29,14 @@ export default function AuthLayout({
     children: React.ReactNode
 }) {
     const [currentImage, setCurrentImage] = useState(0)
+    const [currentRightImage, setCurrentRightImage] = useState(0)
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
         setMounted(true)
         const interval = setInterval(() => {
             setCurrentImage((prev) => (prev + 1) % images.length)
+            setCurrentRightImage((prev) => (prev + 1) % 2)
         }, 8000)
         return () => clearInterval(interval)
     }, [])
@@ -113,17 +115,42 @@ export default function AuthLayout({
 
             {/* Right Panel - Form */}
             <div className="flex-1 flex items-center justify-center p-6 lg:p-10 relative">
-                {/* Travel-themed background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
-                <div
-                    className="absolute inset-0 opacity-[0.04]"
-                    style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2378716C' stroke-width='0.5' fill-opacity='0.1'%3E%3Cpath d='M100 200 Q200 150 300 200 T500 200 Q600 150 700 200'/%3E%3Cpath d='M150 180 Q250 130 350 180 T550 180'/%3E%3Cpath d='M200 220 Q300 270 400 220 T600 220'/%3E%3Ccircle cx='200' cy='180' r='3' fill='%2378716C'/%3E%3Ccircle cx='400' cy='200' r='3' fill='%2378716C'/%3E%3Ccircle cx='600' cy='180' r='3' fill='%2378716C'/%3E%3C/g%3E%3C/svg%3E")`,
-                        backgroundSize: '800px 400px',
-                        backgroundPosition: 'center',
-                        backgroundRepeat: 'repeat',
-                    }}
-                />
+                {/* Right Panel Backgrounds */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {/* Base cream background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-cream-50 to-yellow-50" />
+
+                    {/* Rotating Custom Images */}
+                    {mounted && (
+                        <>
+                            <div
+                                className={`absolute inset-0 transition-opacity duration-1000 ${currentRightImage === 0 ? "opacity-100" : "opacity-0"
+                                    }`}
+                            >
+                                <Image
+                                    src="/bg1.jpg"
+                                    alt="Background 1"
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
+                            <div
+                                className={`absolute inset-0 transition-opacity duration-1000 ${currentRightImage === 1 ? "opacity-100" : "opacity-0"
+                                    }`}
+                            >
+                                <Image
+                                    src="/bg2.jpg"
+                                    alt="Background 2"
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {/* Light overlay to ensure the form remains perfectly readable */}
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]" />
+                </div>
 
                 {/* Mobile Logo */}
                 <Link

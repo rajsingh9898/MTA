@@ -174,7 +174,7 @@ export default function LoginPage() {
                     href="/register"
                     className="text-foreground font-medium hover:underline underline-offset-4"
                 >
-                    Sign Up/Create Account
+                    Sign Up
                 </Link>
             </p>
         </motion.div>

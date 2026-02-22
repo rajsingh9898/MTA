@@ -28,6 +28,7 @@ interface ItineraryData {
         totalEstimatedCost: string
         totalActivities: number
         keyHighlights: string[]
+        totalTransportationCost?: string
     }
     tripMetadata?: {
         name?: string

@@ -13,11 +13,11 @@ const styles = StyleSheet.create({
         flexDirection: "column",
         backgroundColor: "#FFFFFF",
         fontFamily: "Helvetica",
+        paddingTop: 50,
+        paddingBottom: 70,
+        paddingHorizontal: 35,
     },
     contentWrapper: {
-        paddingTop: 50,
-        paddingBottom: 60,
-        paddingHorizontal: 35,
         flex: 1,
     },
     header: {
@@ -111,6 +111,7 @@ interface ItineraryData {
         totalEstimatedCost: string
         totalActivities: number
         keyHighlights: string[]
+        totalTransportationCost?: string
     }
     tripMetadata?: {
         name?: string
@@ -197,6 +198,13 @@ export function PdfDocument({ data }: { data: ItineraryData }) {
                                     <Text style={styles.cost}>Cost: {activity.cost.replace(/₹/g, "Rs. ")}</Text>
                                 </View>
                             ))}
+                            {day.transportation && (
+                                <View style={{ marginTop: 5, marginBottom: 15, padding: 10, backgroundColor: "#F1F5F9", borderRadius: 4, borderLeftWidth: 2, borderLeftColor: "#94A3B8" }}>
+                                    <Text style={{ fontSize: 10, color: "#475569" }}>
+                                        {day.transportation.replace(/₹/g, "Rs. ")}
+                                    </Text>
+                                </View>
+                            )}
                         </View>
                     ))}
 
@@ -205,6 +213,11 @@ export function PdfDocument({ data }: { data: ItineraryData }) {
                         <Text style={styles.summaryText}>
                             Total Estimated Cost: {data.summary.totalEstimatedCost.replace(/₹/g, "Rs. ")}
                         </Text>
+                        {data.summary.totalTransportationCost && data.summary.totalTransportationCost !== "N/A" && (
+                            <Text style={styles.summaryText}>
+                                Transportation: {data.summary.totalTransportationCost.replace(/₹/g, "Rs. ")}
+                            </Text>
+                        )}
                         <Text style={styles.summaryText}>
                             Total Activities: {data.summary.totalActivities}
                         </Text>

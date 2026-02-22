@@ -72,6 +72,7 @@ interface ItineraryData {
         totalEstimatedCost: string
         totalActivities: number
         keyHighlights: string[]
+        totalTransportationCost?: string
     }
     tripMetadata?: {
         name?: string
@@ -452,6 +453,10 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                 />
                                 <ExportPdfButton data={{
                                     ...data,
+                                    summary: {
+                                        ...data.summary,
+                                        totalTransportationCost: data.days ? calculateTotalTransportationCost(data.days) : "N/A"
+                                    },
                                     tripMetadata: {
                                         name: itinerary.name || undefined,
                                         startDate: itinerary.startDate ? new Date(itinerary.startDate).toISOString() : undefined,
