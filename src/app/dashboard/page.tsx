@@ -48,7 +48,7 @@ export default async function DashboardPage() {
     return (
         <div className="min-h-screen">
             {/* Premium Background */}
-            <div className="fixed inset-0" style={{ backgroundColor: "#D1FFFF" }} />
+            <div className="fixed inset-0 bg-hero-premium" />
 
             <div className="relative z-10">
                 <Navbar />

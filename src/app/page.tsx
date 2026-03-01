@@ -20,7 +20,7 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-24 lg:py-32 relative overflow-hidden">
         {/* Premium Background */}
-        <div className="absolute inset-0" style={{ backgroundColor: "#D1FFFF" }} />
+        <div className="absolute inset-0 bg-hero-premium" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="label text-primary mb-4 block">Get Started</span>

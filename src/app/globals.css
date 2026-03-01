@@ -56,24 +56,24 @@
    ============================================ */
 :root {
   /* Core */
-  --background: #D1FFFF;
+  --background: #FDFCF8;
   --foreground: #1C1917;
 
-  /* Primary - Forest Green */
-  --primary: #2D5A4A;
-  --primary-foreground: #FDFBF7;
+  /* Primary - Ocean Teal */
+  --primary: #0D9488;
+  --primary-foreground: #FFFFFF;
 
-  /* Secondary - Warm Stone */
-  --secondary: #F5F3EF;
-  --secondary-foreground: #44403C;
+  /* Secondary - Soft Blue/Gray */
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
 
   /* Muted */
-  --muted: #F5F3EF;
-  --muted-foreground: #78716C;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
 
-  /* Accent - Muted Sky Blue */
-  --accent: #E8F1F5;
-  --accent-foreground: #1C1917;
+  /* Accent - Light Teal */
+  --accent: #CCFBF1;
+  --accent-foreground: #115E59;
 
   /* Card */
   --card: #FFFFFF;
@@ -84,21 +84,21 @@
   --popover-foreground: #1C1917;
 
   /* Borders & Inputs */
-  --border: #E7E5E4;
-  --input: #E7E5E4;
-  --ring: #2D5A4A;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #0D9488;
 
   /* Destructive */
-  --destructive: #DC2626;
+  --destructive: #EF4444;
 
   /* Nature Palette */
-  --forest: #2D5A4A;
-  --stone: #A8A29E;
-  --sky-accent: #7CA5B8;
-  --sand: #D6CFC7;
+  --forest: #0D9488;
+  --stone: #94A3B8;
+  --sky-accent: #38BDF8;
+  --sand: #E2E8F0;
 
   /* Shadows (warm-tinted) */
-  --shadow-color: 30 20% 10%;
+  --shadow-color: 220 20% 10%;
   --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.04);
   --shadow-md: 0 4px 6px -1px hsl(var(--shadow-color) / 0.06), 0 2px 4px -2px hsl(var(--shadow-color) / 0.06);
   --shadow-lg: 0 10px 15px -3px hsl(var(--shadow-color) / 0.08), 0 4px 6px -4px hsl(var(--shadow-color) / 0.08);

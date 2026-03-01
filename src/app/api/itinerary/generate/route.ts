@@ -286,7 +286,9 @@ IMPORTANT RULES:
           throw new Error("OpenAI returned empty response")
         }
 
+        console.log("OpenAI successfully returned itinerary JSON.");
         itineraryData = JSON.parse(itineraryJson)
+        console.log("Successfully parsed itinerary JSON.");
 
       } catch (error: any) {
         console.error("AI Generation failed, falling back to mock data:", error.message);

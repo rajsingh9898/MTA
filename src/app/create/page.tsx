@@ -201,7 +201,7 @@ export default function CreateItineraryPage() {
         <div className="min-h-screen relative">
             {/* Travel-themed background */}
             {/* Premium Background */}
-            <div className="fixed inset-0" style={{ backgroundColor: "#D1FFFF" }} />
+            <div className="fixed inset-0 bg-hero-premium" />
 
             <div className="relative z-10">
 

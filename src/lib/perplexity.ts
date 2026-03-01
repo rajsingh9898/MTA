@@ -37,7 +37,13 @@ export async function searchPerplexity(query: string) {
 
         if (!response.ok) {
             const errorText = await response.text()
-            console.error("Perplexity API Error:", response.status, errorText)
+            if (response.status === 401 || response.status === 403) {
+                console.error("Perplexity API Error: Unauthorized or Forbidden. Please check your API key.")
+            } else {
+                // Truncate errorText to avoid massive HTML dumps
+                const cleanError = errorText.length > 200 ? errorText.substring(0, 200) + "..." : errorText;
+                console.error("Perplexity API Error:", response.status, cleanError)
+            }
             throw new Error(`Perplexity API error: ${response.statusText}`)
         }
 

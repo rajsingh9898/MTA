@@ -45,6 +45,14 @@ import { Button } from "@/components/ui/button"
 import { ShareItineraryButton } from "@/components/share-itinerary-button"
 import { DeleteItineraryButton } from "@/components/delete-itinerary-button"
 import { ExportPdfButton } from "@/components/export-pdf-button"
+import { DailyHotelSuggestion } from "@/components/daily-hotel-suggestion"
+
+function getDetailedDate(startDateObj: string | Date | null | undefined, dayIdx: number) {
+    if (!startDateObj) return null;
+    const date = new Date(startDateObj);
+    date.setDate(date.getDate() + dayIdx);
+    return date;
+}
 
 interface Activity {
     timeSlot: string
@@ -347,8 +355,8 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
 
     return (
         <div className="min-h-screen relative">
-            {/* Travel-themed background */}
-            <div className="fixed inset-0" style={{ backgroundColor: "#D1FFFF" }} />
+            {/* Premium Background */}
+            <div className="fixed inset-0 bg-hero-premium" />
 
             <div className="relative z-10">
                 {/* Hero Section */}
@@ -642,57 +650,6 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                         </motion.div>
                     )}
 
-                    {/* Hotel Recommendations */}
-                    {data.hotels && data.hotels.length > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: 0.35 }}
-                            className="mb-12"
-                        >
-                            <h2 className="text-2xl font-display font-semibold mb-6">Where to Stay</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {data.hotels.map((hotel, idx) => (
-                                    <div key={idx} className="bg-card border border-border/60 rounded-2xl p-6 flex flex-col h-full hover:border-primary/50 transition-colors">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <h3 className="font-semibold text-lg line-clamp-1">{hotel.name}</h3>
-                                            <span className="flex items-center text-sm font-medium bg-primary/10 text-primary px-2 py-1 rounded-md">
-                                                ★ {hotel.rating}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-grow">
-                                            {hotel.description}
-                                        </p>
-                                        <div className="space-y-3 mt-auto">
-                                            <div className="flex items-center text-sm text-muted-foreground">
-                                                <Wallet className="w-4 h-4 mr-2" />
-                                                {hotel.priceRange}
-                                            </div>
-                                            {hotel.address && (
-                                                <div className="flex items-center text-sm text-muted-foreground">
-                                                    <MapPin className="w-4 h-4 mr-2" />
-                                                    <span className="line-clamp-1">{hotel.address}</span>
-                                                </div>
-                                            )}
-                                            <div className="flex flex-wrap gap-2 pt-2">
-                                                {hotel.amenities.slice(0, 3).map((amenity, i) => (
-                                                    <span key={i} className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-                                                        {amenity}
-                                                    </span>
-                                                ))}
-                                                {hotel.amenities.length > 3 && (
-                                                    <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-                                                        +{hotel.amenities.length - 3}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
-
                     {/* Daily Itinerary */}
                     <div className="space-y-8" id="day-by-day-plan">
                         <h2 className="text-2xl font-display font-semibold">Your Day-by-Day Plan</h2>
@@ -709,8 +666,21 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                 <div className="bg-gradient-to-r from-primary/10 to-transparent p-6 border-b border-border/40">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <span className="label text-primary">Day {day.day}</span>
-                                            <p className="text-sm text-muted-foreground mt-1">
+                                            <div className="flex items-center gap-3">
+                                                <span className="label text-primary">Day {day.day}</span>
+                                                {(() => {
+                                                    const dDate = getDetailedDate(itinerary.startDate, dayIdx);
+                                                    if (dDate) {
+                                                        return (
+                                                            <span className="text-sm font-medium text-muted-foreground bg-primary/5 px-2.5 py-1 rounded-md border border-border/40">
+                                                                {dDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </span>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
+                                            </div>
+                                            <p className="text-sm text-muted-foreground mt-2">
                                                 Daily cost: {day.dailyCost}
                                             </p>
                                         </div>
@@ -811,6 +781,14 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Hotel Suggestion */}
+                                <DailyHotelSuggestion
+                                    destination={data.overview.destination}
+                                    dayNumber={day.day}
+                                    specificDate={getDetailedDate(itinerary.startDate, dayIdx)?.toISOString()}
+                                    partySize={itinerary.partySize}
+                                />
                             </motion.div>
                         ))}
 
