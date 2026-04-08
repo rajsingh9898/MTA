@@ -13,10 +13,14 @@ export default async function AdminDestinationsPage() {
         redirect("/admin/login")
     }
 
-    const groupedDestinations: Array<{ destination: string; _count: { destination: number } }> = await prisma.itinerary.groupBy({
+    const groupedDestinations = await prisma.itinerary.groupBy({
         by: ["destination"],
         _count: { destination: true },
-        orderBy: { _count: { destination: "desc" } },
+        orderBy: {
+            _count: {
+                destination: "desc"
+            }
+        },
         take: 20,
     })
 
