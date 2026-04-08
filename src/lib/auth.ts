@@ -2,8 +2,10 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { env } from "@/lib/env"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+    secret: env.NEXTAUTH_SECRET,
     session: {
         strategy: "jwt",
         maxAge: 48 * 60 * 60, // 48 hours

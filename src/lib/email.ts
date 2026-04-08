@@ -1,26 +1,24 @@
-import { Resend } from 'resend';
+import { Resend } from "resend"
+import { env } from "@/lib/env"
+import { createLogger } from "@/lib/logger"
 
-const resendApiKey = process.env.RESEND_API_KEY;
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null
+const logger = createLogger("email")
 
 export async function sendOtpEmail(email: string, otp: string) {
     if (!resend) {
-        console.log('---------------------------------------------------');
-        console.log(`[DEV MODE] Email to ${email} with OTP: ${otp}`);
-        console.log('---------------------------------------------------');
-        return;
+        logger.info(`Resend is disabled; skipping OTP delivery for ${email}`)
+        return
     }
 
     try {
         await resend.emails.send({
-            from: 'onboarding@resend.dev',
+            from: "onboarding@resend.dev",
             to: email,
-            subject: 'Your Verification Code',
-            html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
-        });
+            subject: "Your Verification Code",
+            html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`,
+        })
     } catch (error) {
-        console.error('Failed to send email:', error);
-        // Fallback to console for dev if email fails (e.g. unverified domain)
-        console.log(`[FALLBACK] Email to ${email} with OTP: ${otp}`);
+        logger.error("Failed to send email", error)
     }
 }

@@ -31,8 +31,11 @@ function Calendar({
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const handleChange = (date: Date) => {
+    const handleChange = (value: Date | Date[] | null) => {
         if (!onSelect) return
+
+        const date = Array.isArray(value) ? value[0] : value
+        if (!(date instanceof Date)) return
 
         if (mode === "single") {
             onSelect(date)
@@ -61,11 +64,6 @@ function Calendar({
                 const diffTime = Math.abs(
                     to.getTime() - from.getTime()
                 )
-                const days =
-                    Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-
-                console.log("Selected days:", days)
-
                 onSelect({ from, to })
             }
         }
@@ -166,7 +164,7 @@ function Calendar({
     return (
         <div className={cn("calendar-wrapper", className)}>
             <ReactCalendar
-                onChange={handleChange as any}
+                onChange={handleChange}
                 value={getValue()}
                 selectRange={false}
                 tileDisabled={tileDisabled}

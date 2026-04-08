@@ -4,12 +4,17 @@ import { prisma } from "@/lib/prisma"
 import { itinerarySchema } from "@/lib/schemas"
 import { searchPerplexity, buildPerplexityQuery } from "@/lib/perplexity"
 import { generateItineraryWithOpenAI } from "@/lib/openai"
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 
 // Helper function to extract numeric value from cost string
 function extractCostValue(costString: string): number {
-  if (!costString || costString.toLowerCase() === 'free' || costString.toLowerCase() === 'variable') {
+  if (!costString || typeof costString !== "string") return 0;
+
+  const lower = costString.toLowerCase();
+  if (lower === 'free' || lower === 'variable' || lower.includes('included')) {
     return 0;
   }
+
   // Remove currency symbols and extract numbers
   // Handle formats like "₹500", "₹5,000", "₹500-1000", "₹500 - ₹1000"
   const cleanedString = costString.replace(/[₹,\s]/g, '');
@@ -25,7 +30,8 @@ function extractCostValue(costString: string): number {
   }
 
   const match = cleanedString.match(/[\d.]+/);
-  return match ? parseFloat(match[0]) : 0;
+  const parsed = match ? parseFloat(match[0]) : 0;
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 // Helper function to recalculate costs from activities
@@ -43,9 +49,20 @@ function recalculateCosts(itineraryData: any): any {
 
     if (day.activities && Array.isArray(day.activities)) {
       day.activities.forEach((activity: any) => {
-        dailyTotal += extractCostValue(activity.cost);
+        const cost = extractCostValue(activity.cost);
+        dailyTotal += isNaN(cost) ? 0 : cost;
         totalActivities++;
       });
+    }
+
+    if (day.transportation) {
+      const tCost = extractCostValue(day.transportation);
+      // Include transportation in the total cost since the itinerary-view recalculates it this way
+      // However, itinerary-view calculates transportation dynamically.
+      // We do not add it to `dailyTotal` for `dailyCost` display to avoid double counting if UI displays it separately.
+      // Wait, UI does recalculate in calculateTotalCost() by adding both activity and transportation!
+      // To be consistent, the server's generated `totalEstimatedCost` MUST include both.
+      grandTotal += isNaN(tCost) ? 0 : tCost;
     }
 
     grandTotal += dailyTotal;
@@ -56,16 +73,19 @@ function recalculateCosts(itineraryData: any): any {
     };
   });
 
+  // Ensure grandTotal is never NaN before formatting
+  const safeGrandTotal = isNaN(grandTotal) ? 0 : Math.round(grandTotal);
+
   return {
     ...itineraryData,
     days: updatedDays,
     overview: {
       ...itineraryData.overview,
-      totalEstimatedCost: `₹${Math.round(grandTotal).toLocaleString('en-IN')}`
+      totalEstimatedCost: safeGrandTotal === 0 ? "N/A" : `₹${safeGrandTotal.toLocaleString('en-IN')}`
     },
     summary: {
       ...itineraryData.summary,
-      totalEstimatedCost: `₹${Math.round(grandTotal).toLocaleString('en-IN')}`,
+      totalEstimatedCost: safeGrandTotal === 0 ? "N/A" : `₹${safeGrandTotal.toLocaleString('en-IN')}`,
       totalActivities
     }
   };
@@ -135,6 +155,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
+    // Security: Rate limiting — 5 itinerary generations per IP per 10 minutes
+    // Prevents abuse of expensive AI API calls (OpenAI + Perplexity)
+    const rateLimit = checkRateLimit(getRateLimitKey(req, "itinerary-generate"), 5, 10 * 60_000)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: "You\'ve generated too many itineraries. Please wait a few minutes before trying again." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.retryAfterSeconds),
+            "X-RateLimit-Remaining": "0",
+          },
+        }
+      )
+    }
+
     const body = await req.json()
     const validation = itinerarySchema.safeParse(body)
 
@@ -163,6 +199,9 @@ export async function POST(req: Request) {
       endDate,
     } = validation.data
 
+    // origin is stored in itineraryData JSON until DB migration is run
+    const origin = validation.data.origin || ""
+
     let itineraryData;
 
     // Check if API keys are present
@@ -186,6 +225,7 @@ export async function POST(req: Request) {
               dietaryRestrictions,
               accessibilityNeeds,
               interests,
+              budget,
             })
             perplexityData = await searchPerplexity(perplexityQuery)
           } catch (error: any) {
@@ -222,7 +262,7 @@ IMPORTANT RULES:
 3. ${dietaryContext}
 4. ${accessibilityContext}
 5. ${interestsContext}
-6. Include 3-4 top hotel recommendations that fit the budget and style.`
+6. Include 3-4 top hotel recommendations that STRICTLY fit the chosen budget tier (${budget}). Do not suggest luxury hotels for economy budgets, and vice versa.`
 
         const userPrompt = `
           Create a ${numDays}-day itinerary for ${destination} based on these preferences:
@@ -271,7 +311,7 @@ IMPORTANT RULES:
               {
                 "name": "string",
                 "rating": "string (e.g. 4.5/5)",
-                "priceRange": "string (in INR, e.g. ₹3,000-5,000/night)",
+                "priceRange": "string (must specify exact matching ${budget} budget tier cost in INR, e.g. ₹3,000-5,000/night)",
                 "description": "string",
                 "address": "string (optional)",
                 "amenities": ["string"]
@@ -299,6 +339,17 @@ IMPORTANT RULES:
     // 3. Recalculate costs to ensure accuracy
     console.log("Recalculating costs from activities...")
     itineraryData = recalculateCosts(itineraryData)
+
+    // Embed origin in tripMetadata for use by TripCostEstimator (no DB column needed)
+    if (origin) {
+      itineraryData = {
+        ...itineraryData,
+        tripMetadata: {
+          ...(itineraryData.tripMetadata || {}),
+          origin,
+        },
+      }
+    }
 
     // 4. Save to Database
     console.log("Saving itinerary to database...")
@@ -332,8 +383,9 @@ IMPORTANT RULES:
 
   } catch (error: any) {
     console.error("Generation error stack:", error.stack)
+    // Security: Do not leak error stack traces to API responses
     return NextResponse.json(
-      { message: "Failed to generate itinerary", error: error.message || "Unknown error", details: error.stack },
+      { message: "Failed to generate itinerary", error: error.message || "Unknown error" },
       { status: 500 }
     )
   }

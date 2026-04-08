@@ -276,7 +276,7 @@ export default function RegisterPage() {
                             onChange={(e) => otpForm.setValue('otp', e.target.value)}
                         />
                         <p className="text-xs text-muted-foreground text-center">
-                            Check your spam folder if you don't screen the email.
+                            Check your spam folder if you do not see the verification email.
                         </p>
                     </div>
                     <Button

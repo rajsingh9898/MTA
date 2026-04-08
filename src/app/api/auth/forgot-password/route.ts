@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { sendOtpEmail } from "@/lib/nodemailer"
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 
 const forgotPasswordSchema = z.object({
     email: z.string().email("Please enter a valid email"),
@@ -9,6 +10,15 @@ const forgotPasswordSchema = z.object({
 
 export async function POST(req: Request) {
     try {
+        // Security: Rate limiting — 5 attempts per IP per 15 minutes
+        const rateLimit = checkRateLimit(getRateLimitKey(req, "forgot-password"), 5, 15 * 60_000)
+        if (!rateLimit.allowed) {
+            return NextResponse.json(
+                { message: "Too many requests. Please try again later." },
+                { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } }
+            )
+        }
+
         const body = await req.json()
         const { email } = forgotPasswordSchema.parse(body)
 
@@ -17,9 +27,11 @@ export async function POST(req: Request) {
         })
 
         if (!user) {
+            // Security: Return generic message to prevent email/username enumeration
+            // (do NOT reveal that the email is not registered)
             return NextResponse.json(
-                { message: "This email is not registered." },
-                { status: 404 }
+                { message: "If an account exists with this email, a verification code has been sent." },
+                { status: 200 }
             )
         }
 

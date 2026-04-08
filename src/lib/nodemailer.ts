@@ -1,40 +1,41 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer"
+import { env } from "@/lib/env"
+import { createLogger } from "@/lib/logger"
 
-const smtpHost = process.env.SMTP_HOST;
-const smtpPort = parseInt(process.env.SMTP_PORT || '587');
-const smtpUser = process.env.SMTP_USER;
-const smtpPass = process.env.SMTP_PASS;
+const smtpHost = env.SMTP_HOST
+const smtpPort = env.SMTP_PORT ?? 587
+const smtpUser = env.SMTP_USER
+const smtpPass = env.SMTP_PASS
+const logger = createLogger("nodemailer")
 
-export async function sendOtpEmail(email: string, otp: string, type: 'verification' | 'reset' = 'verification') {
+export async function sendOtpEmail(email: string, otp: string, type: "verification" | "reset" = "verification") {
     // Development fallback
     if (!smtpHost || !smtpUser || !smtpPass) {
-        console.log('---------------------------------------------------');
-        console.log(`[DEV MODE] ${type === 'reset' ? 'Password Reset' : 'Verification'} Email to ${email} with OTP: ${otp}`);
-        console.log('---------------------------------------------------');
-        return;
+        logger.info(`SMTP is disabled; skipping ${type} email delivery for ${email}`)
+        return
     }
 
     const transporter = nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
-        secure: smtpPort === 465, // true for 465, false for other ports
+        secure: smtpPort === 465,
         auth: {
             user: smtpUser,
             pass: smtpPass,
         },
-    });
+    })
 
-    const subject = type === 'reset' ? "Reset Your Password" : "Your Verification Code";
-    const title = type === 'reset' ? "Reset Your Password" : "Verify Your Email";
-    const message = type === 'reset'
+    const subject = type === "reset" ? "Reset Your Password" : "Your Verification Code"
+    const title = type === "reset" ? "Reset Your Password" : "Verify Your Email"
+    const message = type === "reset"
         ? "You requested a password reset. Please use the following code to reset your password:"
-        : "Thank you for registering. Please use the following code to verify your email address:";
+        : "Thank you for registering. Please use the following code to verify your email address:"
 
     try {
         await transporter.sendMail({
-            from: `"MTA Support" <${smtpUser}>`, // sender address
-            to: email, // list of receivers
-            subject: subject, // Subject line
+            from: `"MTA Support" <${smtpUser}>`,
+            to: email,
+            subject,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <p style="color: #555; font-weight: bold;"><b>This is system generated mail. Please do not reply it.</b></p>
@@ -51,11 +52,8 @@ export async function sendOtpEmail(email: string, otp: string, type: 'verificati
                     </div>
                 </div>
             `,
-        });
-        console.log(`OTP sent to ${email}`);
+        })
     } catch (error) {
-        console.error('Failed to send email:', error);
-        // Fallback to console for dev if email fails
-        console.log(`[FALLBACK] Email to ${email} with OTP: ${otp}`);
+        logger.error("Failed to send email", error)
     }
 }

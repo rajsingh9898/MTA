@@ -4,6 +4,37 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateItineraryWithOpenAI } from "@/lib/openai"
 
+type SuggestedHotel = {
+    name: string
+    rate_per_night?: {
+        lowest?: string
+        extracted_lowest?: number
+    }
+    overall_rating?: number
+    reviews?: number
+    amenities?: string[]
+    link?: string
+    thumbnail?: string
+}
+
+async function fetchBestHotel(requestUrl: string, destination: string, budget: string, partySize: number, specificDate?: string | null): Promise<SuggestedHotel | null> {
+    try {
+        const hotelsUrl = new URL("/api/hotels", requestUrl)
+        hotelsUrl.searchParams.set("destination", destination)
+        hotelsUrl.searchParams.set("budget", budget)
+        hotelsUrl.searchParams.set("partySize", String(partySize))
+        if (specificDate) hotelsUrl.searchParams.set("date", specificDate)
+
+        const response = await fetch(hotelsUrl.toString())
+        if (!response.ok) return null
+
+        const data = await response.json()
+        return Array.isArray(data.hotels) && data.hotels.length > 0 ? data.hotels[0] as SuggestedHotel : null
+    } catch {
+        return null
+    }
+}
+
 export async function POST(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -33,8 +64,27 @@ export async function POST(
             return NextResponse.json({ message: "Unauthorized" }, { status: 403 })
         }
 
+        const itineraryData = itinerary.itineraryData as Record<string, any> | null
+        const destination = itinerary.destination || itineraryData?.overview?.destination || ""
+        const budget = itinerary.budget || itineraryData?.budget || "Moderate"
+        const partySize = itinerary.partySize || 2
+        const startDate = itinerary.startDate ? new Date(itinerary.startDate).toISOString() : null
+
+        const bestHotel = destination
+            ? await fetchBestHotel(req.url, destination, budget, partySize, startDate)
+            : null
+
         // Construct prompt for regeneration
-        const currentItinerary = JSON.stringify(itinerary.itineraryData)
+        const currentItinerary = JSON.stringify(itineraryData)
+        const hotelContext = bestHotel
+            ? `
+Current best hotel suggestion:
+${JSON.stringify(bestHotel, null, 2)}
+
+If the user mentions hotel pricing, stay category, or hotel changes, update the hotel's cost and recommendation to match the new request.
+Include a top-level hotels array in the returned JSON with the updated hotel recommendation when possible.
+`
+            : ""
 
         const systemPrompt = `You are a travel itinerary expert. Modify the existing itinerary based on the user's feedback.
 IMPORTANT RULES:
@@ -43,11 +93,14 @@ IMPORTANT RULES:
 3. Keep the destination and duration the same unless explicitly asked to change.
 4. Ensure all costs are in Indian Rupees (₹).
 5. The "transportation" field for each day MUST include an estimated numerical cost in INR (e.g., "Metro and walking (₹500)").
+6. If hotel pricing or hotel preference changes are requested, update the hotel recommendation too.
 `
 
         const userPrompt = `
         Current Itinerary JSON:
         ${currentItinerary}
+
+        ${hotelContext}
 
         User Feedback:
         "${feedback}"
@@ -63,6 +116,10 @@ IMPORTANT RULES:
         }
 
         const updatedData = JSON.parse(updatedItineraryJson)
+
+        if (bestHotel) {
+            updatedData.hotels = [bestHotel]
+        }
 
         // Update database
         await prisma.itinerary.update({

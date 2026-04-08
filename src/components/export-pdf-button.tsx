@@ -42,7 +42,8 @@ export function ExportPdfButton({ data }: { data: ItineraryData }) {
     const [isClient, setIsClient] = useState(false)
 
     useEffect(() => {
-        setIsClient(true)
+        const frame = requestAnimationFrame(() => setIsClient(true))
+        return () => cancelAnimationFrame(frame)
     }, [])
 
     if (!isClient) {

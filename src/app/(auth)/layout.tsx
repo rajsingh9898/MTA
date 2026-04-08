@@ -33,12 +33,15 @@ export default function AuthLayout({
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
-        setMounted(true)
+        const frame = requestAnimationFrame(() => setMounted(true))
         const interval = setInterval(() => {
             setCurrentImage((prev) => (prev + 1) % images.length)
             setCurrentRightImage((prev) => (prev + 1) % 2)
         }, 8000)
-        return () => clearInterval(interval)
+        return () => {
+            cancelAnimationFrame(frame)
+            clearInterval(interval)
+        }
     }, [])
 
     return (

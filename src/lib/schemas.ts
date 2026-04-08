@@ -44,6 +44,7 @@ export const itinerarySchema = z.object({
     interests: z.array(z.string()),
     startDate: z.string().optional(),
     endDate: z.string().optional(),
+    origin: z.string().optional(),
 })
 
 export type ItineraryInput = z.infer<typeof itinerarySchema>

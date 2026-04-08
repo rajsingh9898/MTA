@@ -46,6 +46,7 @@ import { ShareItineraryButton } from "@/components/share-itinerary-button"
 import { DeleteItineraryButton } from "@/components/delete-itinerary-button"
 import { ExportPdfButton } from "@/components/export-pdf-button"
 import { DailyHotelSuggestion } from "@/components/daily-hotel-suggestion"
+import { TripCostEstimator } from "@/components/trip-cost-estimator"
 
 function getDetailedDate(startDateObj: string | Date | null | undefined, dayIdx: number) {
     if (!startDateObj) return null;
@@ -86,14 +87,20 @@ interface ItineraryData {
         name?: string
         startDate?: string
         endDate?: string
+        origin?: string
+        userName?: string
     }
     hotels?: {
         name: string
-        rating: string
-        priceRange: string
-        description: string
-        address?: string
+        rate_per_night?: {
+            lowest?: string
+            extracted_lowest?: number
+        }
+        overall_rating?: number
+        reviews?: number
         amenities: string[]
+        link?: string
+        thumbnail?: string
     }[]
 }
 
@@ -625,6 +632,32 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                         </div>
                     </motion.div>
 
+                    {/* Trip Cost Estimator */}
+                    <TripCostEstimator
+                        destination={itinerary.destination}
+                        numDays={itinerary.numDays}
+                        partySize={itinerary.partySize}
+                        budget={itinerary.budget}
+                        startDate={itinerary.startDate}
+                        endDate={itinerary.endDate}
+                        origin={data.tripMetadata?.origin || ""}
+                    />
+
+                    {/* Best Hotel */}
+                    <div className="mt-10 mb-12">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                            <h2 className="text-xl font-semibold">Best Hotel for This Trip</h2>
+                        </div>
+                        <DailyHotelSuggestion
+                            destination={data.overview.destination}
+                            specificDate={getDetailedDate(itinerary.startDate, 0)?.toISOString()}
+                            partySize={itinerary.partySize}
+                            budget={itinerary.budget}
+                            hotel={data.hotels?.[0] || null}
+                        />
+                    </div>
+
                     {/* Highlights */}
                     {data.summary?.keyHighlights && data.summary.keyHighlights.length > 0 && (
                         <motion.div
@@ -782,13 +815,6 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                     </div>
                                 )}
 
-                                {/* Hotel Suggestion */}
-                                <DailyHotelSuggestion
-                                    destination={data.overview.destination}
-                                    dayNumber={day.day}
-                                    specificDate={getDetailedDate(itinerary.startDate, dayIdx)?.toISOString()}
-                                    partySize={itinerary.partySize}
-                                />
                             </motion.div>
                         ))}
 

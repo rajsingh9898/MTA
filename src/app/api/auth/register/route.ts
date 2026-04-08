@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
+import { createLogger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+
+const logger = createLogger("auth-register")
 
 const registerSchema = z.object({
     name: z.string().min(2, "Name is required"),
@@ -19,6 +23,14 @@ const registerSchema = z.object({
 
 export async function POST(req: Request) {
     try {
+        const rateLimit = checkRateLimit(getRateLimitKey(req, "auth-register"), 10, 60_000)
+        if (!rateLimit.allowed) {
+            return NextResponse.json(
+                { message: "Too many registration attempts. Please try again later." },
+                { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } }
+            )
+        }
+
         const body = await req.json()
         const { name, email, phoneNumber, city, password } = registerSchema.parse(body)
 
@@ -123,9 +135,9 @@ export async function POST(req: Request) {
                 { status: 400 }
             )
         }
-        console.error("Registration error:", error)
+        logger.error("Registration error", error)
         return NextResponse.json(
-            { message: error instanceof Error ? error.message : "Internal server error" },
+            { message: "Internal server error" },
             { status: 500 }
         )
     }

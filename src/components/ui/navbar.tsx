@@ -22,9 +22,18 @@ export function Navbar() {
     const { data: session } = useSession()
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
     const [scrolled, setScrolled] = React.useState(false)
+    const isAdminRoute = pathname.startsWith("/admin")
 
     // Conditionally render navigation links based on authentication
     const navLinks = React.useMemo(() => {
+        if (isAdminRoute) {
+            return [
+                { href: "/admin", label: "Overview" },
+                { href: "/admin/trips", label: "Trips" },
+                { href: "/admin/users", label: "Users" },
+            ]
+        }
+
         const links = [
             { href: "/", label: "Home" },
             { href: "/create", label: "Create Trip" },
@@ -36,7 +45,7 @@ export function Navbar() {
         }
 
         return links
-    }, [session])
+    }, [isAdminRoute, session])
 
     React.useEffect(() => {
         const handleScroll = () => {

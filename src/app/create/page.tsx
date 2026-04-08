@@ -22,7 +22,8 @@ import {
     Plus,
     Mountain,
     Home,
-    Loader2
+    Loader2,
+    LocateFixed
 } from "lucide-react"
 
 import { itinerarySchema, ItineraryInput, DIETARY_OPTIONS, ACCESSIBILITY_OPTIONS, INTEREST_OPTIONS } from "@/lib/schemas"
@@ -31,17 +32,18 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { Input } from "@/components/ui/input"
 // import { Slider } from "@/components/ui/slider"
 import { Calendar } from "@/components/ui/calendar"
-import { addDays, differenceInDays, format } from "date-fns"
+import { differenceInDays, format } from "date-fns"
 import { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 
 const STEPS = [
-    { id: 1, title: "Destination", description: "Where would you like to go?", icon: MapPin },
-    { id: 2, title: "Duration", description: "How long is your trip?", icon: CalendarIcon },
-    { id: 3, title: "Budget", description: "What's your budget preference?", icon: Wallet },
-    { id: 4, title: "Travelers", description: "Who's coming along?", icon: Users },
-    { id: 5, title: "Pace", description: "How active do you want to be?", icon: Activity },
-    { id: 6, title: "Preferences", description: "Any special requirements?", icon: Heart },
+    { id: 1, title: "Origin", description: "Where are you traveling from?", icon: LocateFixed },
+    { id: 2, title: "Destination", description: "Where would you like to go?", icon: MapPin },
+    { id: 3, title: "Duration", description: "How long is your trip?", icon: CalendarIcon },
+    { id: 4, title: "Budget", description: "What's your budget preference?", icon: Wallet },
+    { id: 5, title: "Travelers", description: "Who's coming along?", icon: Users },
+    { id: 6, title: "Pace", description: "How active do you want to be?", icon: Activity },
+    { id: 7, title: "Preferences", description: "Any special requirements?", icon: Heart },
 ]
 
 const TRAVELER_TYPES = [
@@ -79,6 +81,7 @@ export default function CreateItineraryPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0])
     const [step, setStep] = useState(1)
+    const [locationLoading, setLocationLoading] = useState(false)
     const [travelerCounts, setTravelerCounts] = useState<Record<string, number>>({
         Adults: 1,
         Children: 0,
@@ -89,10 +92,17 @@ export default function CreateItineraryPage() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>()
     const [activeField, setActiveField] = useState<"from" | "to" | null>(null)
 
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login")
+        }
+    }, [status, router])
+
     const form = useForm<ItineraryInput>({
         resolver: zodResolver(itinerarySchema),
         defaultValues: {
             destination: "",
+            origin: "",
             numDays: 0,
             budget: "Moderate",
             ageGroups: ["Adults"],
@@ -136,20 +146,18 @@ export default function CreateItineraryPage() {
     }
 
     if (status === "unauthenticated") {
-        useEffect(() => {
-            router.push("/login")
-        }, [router])
         return null
     }
 
     const nextStep = async () => {
         const fieldsToValidate: (keyof ItineraryInput)[] = []
         switch (step) {
-            case 1: fieldsToValidate.push("destination"); break
-            case 2: fieldsToValidate.push("numDays"); break
-            case 3: fieldsToValidate.push("budget"); break
-            case 4: fieldsToValidate.push("ageGroups", "partySize"); break
-            case 5: fieldsToValidate.push("activityLevel"); break
+            case 1: break // origin is optional — skip freely
+            case 2: fieldsToValidate.push("destination"); break
+            case 3: fieldsToValidate.push("numDays"); break
+            case 4: fieldsToValidate.push("budget"); break
+            case 5: fieldsToValidate.push("ageGroups", "partySize"); break
+            case 6: fieldsToValidate.push("activityLevel"); break
         }
         const isValid = await form.trigger(fieldsToValidate)
         if (isValid) setStep((prev) => Math.min(prev + 1, STEPS.length))
@@ -181,6 +189,67 @@ export default function CreateItineraryPage() {
             toast.error(error instanceof Error ? error.message : "Something went wrong")
             setIsLoading(false)
         }
+    }
+
+    const handleDetectLocation = async (fieldOnChange: (val: string) => void) => {
+        if (!navigator.geolocation) {
+            toast.error("Geolocation is not supported by your browser")
+            return
+        }
+        setLocationLoading(true)
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords
+                    const res = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10&addressdetails=1`,
+                        { headers: { "Accept-Language": "en" } }
+                    )
+                    const geo = await res.json()
+                    const addr = geo?.address || {}
+
+                    // Extended fallback chain — Nominatim returns different fields
+                    // depending on the region. Indian cities often use city_district or county.
+                    const cityName =
+                        addr.city ||
+                        addr.town ||
+                        addr.city_district ||
+                        addr.county ||
+                        addr.state_district ||
+                        addr.village ||
+                        addr.hamlet ||
+                        addr.suburb ||
+                        ""
+
+                    const country = addr.country || ""
+                    const formatted = cityName
+                        ? country ? `${cityName}, ${country}` : cityName
+                        : ""
+
+                    if (formatted) {
+                        fieldOnChange(formatted)
+                        toast.success(`📍 Location detected: ${cityName}`)
+                    } else {
+                        // Last resort — use coordinates string
+                        toast.error("Could not detect your city. Please type it manually.")
+                        console.debug("Nominatim response:", geo)
+                    }
+                } catch {
+                    toast.error("Failed to get location. Please type your origin city.")
+                } finally {
+                    setLocationLoading(false)
+                }
+            },
+            (err) => {
+                if (err.code === 1) {
+                    toast.error("Location access denied. Please type your city.")
+                } else {
+                    toast.error("Could not get your location. Please type your city.")
+                }
+                setLocationLoading(false)
+            },
+            { timeout: 10000, maximumAge: 60000 }
+        )
     }
 
     const updateTravelerCount = (type: string, delta: number) => {
@@ -290,8 +359,68 @@ export default function CreateItineraryPage() {
                                         transition={{ duration: 0.2 }}
                                         className="min-h-[280px] flex flex-col justify-center"
                                     >
-                                        {/* Step 1: Destination */}
+                                        {/* Step 1: Origin City */}
                                         {step === 1 && (
+                                            <FormField
+                                                control={form.control}
+                                                name="origin"
+                                                render={({ field }) => (
+                                                    <FormItem className="space-y-4">
+                                                        <FormControl>
+                                                            <Input
+                                                                placeholder="e.g. Mumbai, India"
+                                                                className="h-14 text-lg text-center rounded-2xl"
+                                                                autoFocus
+                                                                {...field}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === "Enter") {
+                                                                        e.preventDefault()
+                                                                        nextStep()
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage className="text-center" />
+                                                        <div className="flex flex-wrap justify-center gap-2 pt-2">
+                                                            <button
+                                                                type="button"
+                                                                disabled={locationLoading}
+                                                                onClick={() => handleDetectLocation(field.onChange)}
+                                                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full border border-primary bg-primary/5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50 w-full justify-center mb-1"
+                                                            >
+                                                                {locationLoading ? (
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                ) : (
+                                                                    <LocateFixed className="w-4 h-4" />
+                                                                )}
+                                                                {locationLoading ? "Detecting your location..." : "📍 Use My Current Location"}
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex flex-wrap justify-center gap-2">
+                                                            {["Mumbai, India", "Delhi, India", "Bangalore, India", "Hyderabad, India", "Chennai, India", "Kolkata, India", "Pune, India", "Jaipur, India"].map((city) => (
+                                                                <button
+                                                                    key={city}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        field.onChange(city)
+                                                                        nextStep()
+                                                                    }}
+                                                                    className="px-4 py-2 text-sm rounded-full bg-secondary hover:bg-secondary/80 transition-colors"
+                                                                >
+                                                                    {city}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        <p className="text-center text-xs text-muted-foreground pt-1">
+                                                            Used to estimate flight costs — optional, you can skip.
+                                                        </p>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        )}
+
+                                        {/* Step 2: Destination */}
+                                        {step === 2 && (
                                             <FormField
                                                 control={form.control}
                                                 name="destination"
@@ -312,7 +441,7 @@ export default function CreateItineraryPage() {
                                                             />
                                                         </FormControl>
                                                         <FormMessage className="text-center" />
-                                                        <div className="flex flex-wrap justify-center gap-2 pt-4">
+                                                        <div className="flex flex-wrap justify-center gap-2 pt-2">
                                                             {["Delhi, India", "Ayodhya, India", "Kathmandu, Nepal", "Moscow, Russia", "Paris, France", "Bali, Indonesia", "New York, USA", "Rome, Italy"].map((dest) => (
                                                                 <button
                                                                     key={dest}
@@ -332,10 +461,9 @@ export default function CreateItineraryPage() {
                                             />
                                         )}
 
-                                        {/* Step 2: Duration */}
-                                        {step === 2 && (
+                                        {/* Step 3: Duration */}
+                                        {step === 3 && (
                                             <>
-                                                {console.log("Rendering Duration Step")}
                                                 <FormField
                                                     control={form.control}
                                                     name="numDays"
@@ -487,8 +615,8 @@ export default function CreateItineraryPage() {
                                             </>
                                         )}
 
-                                        {/* Step 3: Budget */}
-                                        {step === 3 && (
+                                        {/* Step 4: Budget */}
+                                        {step === 4 && (
                                             <FormField
                                                 control={form.control}
                                                 name="budget"
@@ -520,8 +648,8 @@ export default function CreateItineraryPage() {
                                             />
                                         )}
 
-                                        {/* Step 4: Travelers */}
-                                        {step === 4 && (
+                                        {/* Step 5: Travelers */}
+                                        {step === 5 && (
                                             <div className="space-y-4">
                                                 {TRAVELER_TYPES.map((type) => (
                                                     <div
@@ -564,8 +692,8 @@ export default function CreateItineraryPage() {
                                             </div>
                                         )}
 
-                                        {/* Step 5: Pace */}
-                                        {step === 5 && (
+                                        {/* Step 6: Pace */}
+                                        {step === 6 && (
                                             <FormField
                                                 control={form.control}
                                                 name="activityLevel"
@@ -597,8 +725,8 @@ export default function CreateItineraryPage() {
                                             />
                                         )}
 
-                                        {/* Step 6: Preferences */}
-                                        {step === 6 && (
+                                        {/* Step 7: Preferences */}
+                                        {step === 7 && (
                                             <div className="space-y-6">
                                                 {/* Interests */}
                                                 <div>
@@ -721,7 +849,7 @@ export default function CreateItineraryPage() {
                                             type="button"
                                             onClick={nextStep}
                                             className="gap-2 rounded-full px-6"
-                                            disabled={step === 2 && form.watch("numDays") === 0}
+                                            disabled={step === 3 && form.watch("numDays") === 0}
                                         >
                                             Next <ArrowRight className="w-4 h-4" />
                                         </Button>

@@ -32,7 +32,7 @@ export default function ProfileDemoPage() {
                         <h2 className="text-lg font-semibold mb-2">Features</h2>
                         <ul className="space-y-2 text-sm text-muted-foreground">
                             <li>• Profile avatar with user name and email display</li>
-                            <li>• Expandable "Manage Account" section with smooth animations</li>
+                            <li>• Expandable &quot;Manage Account&quot; section with smooth animations</li>
                             <li>• Account management options (Change Password, Email, Delete Account)</li>
                             <li>• Dark theme compatible with existing MTA design</li>
                             <li>• Hover effects and transitions</li>
@@ -43,7 +43,7 @@ export default function ProfileDemoPage() {
                         <h2 className="text-lg font-semibold mb-2">Integration</h2>
                         <p className="text-sm text-muted-foreground">
                             The ProfileDropdown component is now integrated into the main navbar and will appear 
-                            on all pages. It uses the existing shadcn/ui components and follows the project's 
+                            on all pages. It uses the existing shadcn/ui components and follows the project&apos;s 
                             design system.
                         </p>
                     </div>

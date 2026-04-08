@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { env } from "@/lib/env"
+import { createLogger } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 import { randomBytes } from "crypto"
+
+const logger = createLogger("share-itinerary")
 
 export async function POST(req: Request) {
     try {
@@ -46,7 +50,7 @@ export async function POST(req: Request) {
         })
 
         const shareUrl = shareToken
-            ? `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/share/${shareToken}`
+            ? `${env.NEXTAUTH_URL || "http://localhost:3000"}/share/${shareToken}`
             : null
 
         return NextResponse.json({
@@ -55,10 +59,10 @@ export async function POST(req: Request) {
             shareUrl,
         })
 
-    } catch (error: any) {
-        console.error("Share error:", error)
+    } catch (error) {
+        logger.error("Share error", error)
         return NextResponse.json(
-            { message: "Failed to update sharing settings", error: error.message },
+            { message: "Failed to update sharing settings" },
             { status: 500 }
         )
     }

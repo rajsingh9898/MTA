@@ -1,3 +1,8 @@
+import { env } from "@/lib/env"
+import { createLogger } from "@/lib/logger"
+
+const logger = createLogger("perplexity")
+
 interface PerplexityOptions {
     destination: string
     ageGroups: string[]
@@ -5,10 +10,11 @@ interface PerplexityOptions {
     dietaryRestrictions?: string[]
     accessibilityNeeds?: string[]
     interests?: string[]
+    budget?: string
 }
 
 export async function searchPerplexity(query: string) {
-    if (!process.env.PERPLEXITY_API_KEY) {
+    if (!env.PERPLEXITY_API_KEY) {
         throw new Error("PERPLEXITY_API_KEY is not set")
     }
 
@@ -16,7 +22,7 @@ export async function searchPerplexity(query: string) {
         const response = await fetch("https://api.perplexity.ai/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+                "Authorization": `Bearer ${env.PERPLEXITY_API_KEY}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -38,25 +44,26 @@ export async function searchPerplexity(query: string) {
         if (!response.ok) {
             const errorText = await response.text()
             if (response.status === 401 || response.status === 403) {
-                console.error("Perplexity API Error: Unauthorized or Forbidden. Please check your API key.")
+                logger.error("Perplexity API Error: Unauthorized or Forbidden. Please check your API key.")
             } else {
                 // Truncate errorText to avoid massive HTML dumps
-                const cleanError = errorText.length > 200 ? errorText.substring(0, 200) + "..." : errorText;
-                console.error("Perplexity API Error:", response.status, cleanError)
+                const cleanError = errorText.length > 200 ? `${errorText.substring(0, 200)}...` : errorText
+                logger.error("Perplexity API Error", { status: response.status, error: cleanError })
             }
             throw new Error(`Perplexity API error: ${response.statusText}`)
         }
 
         const data = await response.json()
         return data.choices[0].message.content
-    } catch (error: any) {
-        console.error("Perplexity API Error:", error.message)
-        throw new Error(`Perplexity API failed: ${error.message}`)
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown Perplexity API failure"
+        logger.error("Perplexity API Error", message)
+        throw new Error(`Perplexity API failed: ${message}`)
     }
 }
 
 export function buildPerplexityQuery(options: PerplexityOptions): string {
-    const { destination, ageGroups, activityLevel, dietaryRestrictions, accessibilityNeeds, interests } = options
+    const { destination, ageGroups, activityLevel, dietaryRestrictions, accessibilityNeeds, interests, budget } = options
 
     let query = `Find top attractions, restaurants, and activities in ${destination} suitable for ${ageGroups.join(", ")} with ${activityLevel} intensity.`
 
@@ -70,6 +77,10 @@ export function buildPerplexityQuery(options: PerplexityOptions): string {
 
     if (interests && interests.length > 0) {
         query += ` Prioritize activities related to: ${interests.join(", ")}.`
+    }
+
+    if (budget) {
+        query += ` Please keep recommendations, especially hotels and dining, within a ${budget} budget tier.`
     }
 
     query += " Include current hours, prices in INR (₹), and accessibility info."

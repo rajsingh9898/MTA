@@ -1,4 +1,8 @@
-const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY
+import { env } from "@/lib/env"
+import { createLogger } from "@/lib/logger"
+
+const UNSPLASH_ACCESS_KEY = env.UNSPLASH_ACCESS_KEY
+const logger = createLogger("unsplash")
 
 interface UnsplashPhoto {
     id: string
@@ -34,7 +38,6 @@ export async function getDestinationImage(destination: string): Promise<{
     photographerUrl?: string
 }> {
     if (!UNSPLASH_ACCESS_KEY) {
-        console.warn("UNSPLASH_ACCESS_KEY not set, using default image")
         return { url: DEFAULT_TRAVEL_IMAGE }
     }
 
@@ -51,14 +54,14 @@ export async function getDestinationImage(destination: string): Promise<{
         )
 
         if (!response.ok) {
-            console.error("Unsplash API error:", response.status)
+            logger.error("Unsplash API error", response.status)
             return { url: DEFAULT_TRAVEL_IMAGE }
         }
 
         const data: UnsplashSearchResponse = await response.json()
 
         if (data.results.length === 0) {
-            console.warn(`No images found for "${destination}", using default`)
+            logger.warn(`No images found for "${destination}", using default`)
             return { url: DEFAULT_TRAVEL_IMAGE }
         }
 
@@ -69,7 +72,7 @@ export async function getDestinationImage(destination: string): Promise<{
             photographerUrl: `https://unsplash.com/@${photo.user.username}`,
         }
     } catch (error) {
-        console.error("Error fetching Unsplash image:", error)
+        logger.error("Error fetching Unsplash image", error)
         return { url: DEFAULT_TRAVEL_IMAGE }
     }
 }
@@ -105,7 +108,7 @@ export async function getDestinationThumbnail(destination: string): Promise<stri
         }
 
         return data.results[0].urls.small
-    } catch (error) {
+    } catch {
         return DEFAULT_TRAVEL_IMAGE
     }
 }
