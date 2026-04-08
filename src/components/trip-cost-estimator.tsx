@@ -200,7 +200,7 @@ export function TripCostEstimator({
                 {!loading && error && (
                     <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-3 py-10 px-6">
                         <p className="text-sm text-muted-foreground">{error}</p>
-                        <Button variant="outline" size="sm" onClick={fetchCosts} className="gap-2 rounded-full">
+                        <Button variant="outline" size="sm" onClick={() => fetchCosts(true)} className="gap-2 rounded-full">
                             <RefreshCw className="w-3.5 h-3.5" /> Retry
                         </Button>
                     </motion.div>
