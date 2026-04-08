@@ -31,10 +31,20 @@ function Calendar({
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const handleChange = (value: Date | Date[] | null) => {
+    const handleChange = (value: any) => {
         if (!onSelect) return
 
-        const date = Array.isArray(value) ? value[0] : value
+        // Handle ReactCalendar's Value type which can be Date, Date[], or Range
+        let date: Date | null = null
+        if (Array.isArray(value)) {
+            date = value[0] || null
+        } else if (value && typeof value === 'object' && 'from' in value) {
+            // Range case
+            date = value.from || null
+        } else {
+            date = value
+        }
+
         if (!(date instanceof Date)) return
 
         if (mode === "single") {

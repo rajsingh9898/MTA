@@ -5,13 +5,13 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { User, LogOut, UserCircle, Calendar, ChevronRight, Edit2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { profileStorage } from "@/lib/profile-storage"
+import { profileStorage, ProfileData } from "@/lib/profile-storage"
 
 export function ProfileTest() {
     const { data: session, status } = useSession()
     const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
-    const [profileData, setProfileData] = useState<{ firstName?: string; lastName?: string } | null>(null)
+    const [profileData, setProfileData] = useState<ProfileData | null>(null)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
     // Load profile data
@@ -63,8 +63,13 @@ export function ProfileTest() {
         const newName = prompt("Enter your name:", currentName)
         if (newName && newName.trim()) {
             const updatedProfile = {
-                ...profileData,
-                firstName: newName.trim()
+                firstName: newName.trim(),
+                lastName: profileData?.lastName || '',
+                bio: profileData?.bio || '',
+                phone: profileData?.phone || '',
+                location: profileData?.location || '',
+                emailNotifications: profileData?.emailNotifications ?? true,
+                pushNotifications: profileData?.pushNotifications ?? true
             }
             profileStorage.save(updatedProfile)
             setProfileData(updatedProfile)
