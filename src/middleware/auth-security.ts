@@ -41,7 +41,7 @@ export function enforceAuthRateLimit(
 // Function to log security events
 export function logSecurityEvent(
   type: string,
-  details: Record<string, any>,
+  details: Record<string, unknown>,
   request: Request | NextRequest
 ) {
   const timestamp = new Date().toISOString()

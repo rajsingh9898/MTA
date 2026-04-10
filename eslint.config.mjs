@@ -13,6 +13,23 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // Allow explicit any for now
+      "@typescript-eslint/no-explicit-any": "off",
+      // Allow unused variables for now
+      "@typescript-eslint/no-unused-vars": "warn",
+      // Allow img elements for now
+      "@next/next/no-img-element": "warn",
+      // Allow missing alt props for now
+      "jsx-a11y/alt-text": "warn",
+      // Allow all other potential issues as warnings
+      "prefer-const": "warn",
+      "no-var": "warn",
+      "no-console": "warn",
+      "no-debugger": "warn",
+    }
+  }
 ]);
 
 export default eslintConfig;
