@@ -14,9 +14,10 @@ export async function POST(req: Request) {
 
         const otpRecord = await prisma.otp.findUnique({
             where: {
-                email_code: {
+                email_code_type: {
                     email,
                     code: otp,
+                    type: "GENERAL",
                 },
             },
         })
