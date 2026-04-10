@@ -68,11 +68,165 @@ const PACE_OPTIONS = [
 ]
 
 const LOADING_MESSAGES = [
-    "Finding the best experiences...",
+    "Finding best experiences...",
     "Discovering hidden gems...",
     "Planning your routes...",
     "Checking local favorites...",
     "Crafting your perfect itinerary...",
+]
+
+// Comprehensive world cities database for suggestions
+const CITY_DATABASE = [
+    // India
+    "Mumbai, India", "Delhi, India", "Bangalore, India", "Hyderabad, India", 
+    "Chennai, India", "Kolkata, India", "Pune, India", "Jaipur, India",
+    "Ahmedabad, India", "Surat, India", "Lucknow, India", "Kanpur, India",
+    "Nagpur, India", "Indore, India", "Thane, India", "Bhopal, India",
+    "Visakhapatnam, India", "Goa, India", "Chandigarh, India", "Kochi, India",
+    "Coimbatore, India", "Kozhikode, India", "Trivandrum, India", "Agra, India",
+    "Varanasi, India", "Amritsar, India", "Jodhpur, India", "Udaipur, India",
+    "Jaisalmer, India", "Pushkar, India", "Rishikesh, India", "Haridwar, India",
+    "Shimla, India", "Manali, India", "Dharamshala, India", "Leh, India",
+    "Srinagar, India", "Gulmarg, India", "Pahalgam, India", "Sonamarg, India",
+    
+    // USA
+    "New York, USA", "Los Angeles, USA", "Chicago, USA", "Houston, USA",
+    "Phoenix, USA", "Philadelphia, USA", "San Antonio, USA", "San Diego, USA",
+    "Dallas, USA", "San Jose, USA", "Austin, USA", "Jacksonville, USA",
+    "Fort Worth, USA", "Columbus, USA", "Charlotte, USA", "San Francisco, USA",
+    "Indianapolis, USA", "Seattle, USA", "Denver, USA", "Washington, USA",
+    "Boston, USA", "Miami, USA", "Atlanta, USA", "Orlando, USA",
+    "Las Vegas, USA", "Nashville, USA", "Tampa, USA", "Portland, USA",
+    "San Antonio, USA", "San Diego, USA", "Sacramento, USA", "Baltimore, USA",
+    "Milwaukee, USA", "Kansas City, USA", "Tucson, USA", "Fresno, USA",
+    "Mesa, USA", "Omaha, USA", "Colorado Springs, USA", "Raleigh, USA",
+    "Virginia Beach, USA", "Long Beach, USA", "Oakland, USA", "Tulsa, USA",
+    "Minneapolis, USA", "Cleveland, USA", "Wichita, USA", "Arlington, USA",
+    "New Orleans, USA", "Honolulu, USA", "Anchorage, USA", "Albuquerque, USA",
+    
+    // UK
+    "London, UK", "Manchester, UK", "Birmingham, UK", "Leeds, UK",
+    "Glasgow, UK", "Liverpool, UK", "Sheffield, UK", "Bristol, UK",
+    "Edinburgh, UK", "Cardiff, UK", "Coventry, UK", "Nottingham, UK",
+    "Leicester, UK", "Bradford, UK", "Belfast, UK", "Newcastle, UK",
+    
+    // France
+    "Paris, France", "Marseille, France", "Lyon, France", "Toulouse, France",
+    "Nice, France", "Nantes, France", "Strasbourg, France", "Bordeaux, France",
+    "Lille, France", "Montpellier, France", "Rennes, France", "Reims, France",
+    
+    // Germany
+    "Berlin, Germany", "Munich, Germany", "Frankfurt, Germany", "Hamburg, Germany",
+    "Cologne, Germany", "Stuttgart, Germany", "Düsseldorf, Germany", "Dortmund, Germany",
+    "Leipzig, Germany", "Dresden, Germany", "Hannover, Germany", "Nuremberg, Germany",
+    "Bremen, Germany", "Essen, Germany", "Duisburg, Germany", "Bochum, Germany",
+    
+    // Italy
+    "Rome, Italy", "Milan, Italy", "Naples, Italy", "Turin, Italy",
+    "Florence, Italy", "Venice, Italy", "Bologna, Italy", "Genoa, Italy",
+    "Palermo, Italy", "Verona, Italy", "Bari, Italy", "Catania, Italy",
+    "Siena, Italy", "Pisa, Italy", "Trieste, Italy", "Perugia, Italy",
+    
+    // Spain
+    "Madrid, Spain", "Barcelona, Spain", "Valencia, Spain", "Seville, Spain",
+    "Bilbao, Spain", "Malaga, Spain", "Murcia, Spain", "Palma, Spain",
+    "Las Palmas, Spain", "Zaragoza, Spain", "Valladolid, Spain", "Cordoba, Spain",
+    
+    // Netherlands
+    "Amsterdam, Netherlands", "Rotterdam, Netherlands", "The Hague, Netherlands",
+    "Utrecht, Netherlands", "Eindhoven, Netherlands", "Groningen, Netherlands",
+    "Tilburg, Netherlands", "Almere, Netherlands", "Breda, Netherlands",
+    
+    // Belgium
+    "Brussels, Belgium", "Antwerp, Belgium", "Ghent, Belgium", "Bruges, Belgium",
+    "Liege, Belgium", "Namur, Belgium", "Leuven, Belgium", "Mechelen, Belgium",
+    
+    // Switzerland
+    "Zurich, Switzerland", "Geneva, Switzerland", "Basel, Switzerland", "Bern, Switzerland",
+    "Lausanne, Switzerland", "Winterthur, Switzerland", "Lucerne, Switzerland",
+    
+    // Austria
+    "Vienna, Austria", "Salzburg, Austria", "Innsbruck, Austria", "Graz, Austria",
+    "Linz, Austria", "Klagenfurt, Austria", "Villach, Austria", "Bregenz, Austria",
+    
+    // Scandinavia
+    "Stockholm, Sweden", "Gothenburg, Sweden", "Malmö, Sweden",
+    "Oslo, Norway", "Bergen, Norway", "Trondheim, Norway", "Stavanger, Norway",
+    "Copenhagen, Denmark", "Aarhus, Denmark", "Odense, Denmark",
+    "Helsinki, Finland", "Espoo, Finland", "Tampere, Finland", "Turku, Finland",
+    
+    // Eastern Europe
+    "Warsaw, Poland", "Krakow, Poland", "Łódź, Poland", "Wrocław, Poland",
+    "Prague, Czech Republic", "Brno, Czech Republic", "Ostrava, Czech Republic",
+    "Budapest, Hungary", "Debrecen, Hungary", "Szeged, Hungary",
+    "Bucharest, Romania", "Cluj-Napoca, Romania", "Timișoara, Romania",
+    "Sofia, Bulgaria", "Plovdiv, Bulgaria", "Varna, Bulgaria", "Burgas, Bulgaria",
+    "Belgrade, Serbia", "Novi Sad, Serbia", "Niš, Serbia", "Kragujevac, Serbia",
+    "Zagreb, Croatia", "Split, Croatia", "Rijeka, Croatia", "Dubrovnik, Croatia",
+    "Ljubljana, Slovenia", "Maribor, Slovenia", "Celje, Slovenia",
+    "Sarajevo, Bosnia", "Banja Luka, Bosnia", "Mostar, Bosnia", "Tuzla, Bosnia",
+    "Athens, Greece", "Thessaloniki, Greece", "Patras, Greece", "Heraklion, Greece",
+    "Istanbul, Turkey", "Ankara, Turkey", "Izmir, Turkey", "Bursa, Turkey",
+    "Antalya, Turkey", "Konya, Turkey", "Adana, Turkey", "Gaziantep, Turkey",
+    
+    // Russia
+    "Moscow, Russia", "Saint Petersburg, Russia", "Novosibirsk, Russia",
+    "Yekaterinburg, Russia", "Nizhny Novgorod, Russia", "Kazan, Russia",
+    "Samara, Russia", "Omsk, Russia", "Chelyabinsk, Russia", "Rostov-on-Don, Russia",
+    "Ufa, Russia", "Perm, Russia", "Volgograd, Russia", "Krasnoyarsk, Russia",
+    
+    // Middle East
+    "Dubai, UAE", "Abu Dhabi, UAE", "Sharjah, UAE", "Al Ain, UAE",
+    "Riyadh, Saudi Arabia", "Jeddah, Saudi Arabia", "Mecca, Saudi Arabia",
+    "Medina, Saudi Arabia", "Dammam, Saudi Arabia", "Khobar, Saudi Arabia",
+    "Tel Aviv, Israel", "Jerusalem, Israel", "Haifa, Israel", "Eilat, Israel",
+    "Doha, Qatar", "Al Rayyan, Qatar", "Wakra, Qatar", "Khor, Qatar",
+    "Kuwait City, Kuwait", "Manama, Bahrain", "Muscat, Oman",
+    
+    // Asia
+    "Tokyo, Japan", "Osaka, Japan", "Kyoto, Japan", "Yokohama, Japan",
+    "Nagoya, Japan", "Sapporo, Japan", "Fukuoka, Japan", "Kobe, Japan",
+    "Seoul, South Korea", "Busan, South Korea", "Incheon, South Korea",
+    "Daegu, South Korea", "Daejeon, South Korea", "Gwangju, South Korea",
+    "Beijing, China", "Shanghai, China", "Guangzhou, China", "Shenzhen, China",
+    "Chengdu, China", "Hangzhou, China", "Wuhan, China", "Xian, China",
+    "Chongqing, China", "Tianjin, China", "Nanjing, China", "Shenyang, China",
+    "Hong Kong, Hong Kong", "Macau, Macau", "Taipei, Taiwan", "Kaohsiung, Taiwan",
+    "Singapore, Singapore", "Bangkok, Thailand", "Phuket, Thailand",
+    "Chiang Mai, Thailand", "Pattaya, Thailand", "Koh Samui, Thailand",
+    "Kuala Lumpur, Malaysia", "Penang, Malaysia", "Johor Bahru, Malaysia",
+    "Malacca, Malaysia", "Ipoh, Malaysia", "Kuching, Malaysia",
+    "Jakarta, Indonesia", "Bali, Indonesia", "Surabaya, Indonesia",
+    "Bandung, Indonesia", "Medan, Indonesia", "Semarang, Indonesia",
+    "Manila, Philippines", "Cebu, Philippines", "Davao, Philippines",
+    "Ho Chi Minh City, Vietnam", "Hanoi, Vietnam", "Da Nang, Vietnam",
+    "Phnom Penh, Cambodia", "Siem Reap, Cambodia", "Vientiane, Laos",
+    "Yangon, Myanmar", "Mandalay, Myanmar", "Bagan, Myanmar",
+    
+    // Oceania
+    "Sydney, Australia", "Melbourne, Australia", "Brisbane, Australia", "Perth, Australia",
+    "Adelaide, Australia", "Gold Coast, Australia", "Canberra, Australia",
+    "Newcastle, Australia", "Wollongong, Australia", "Geelong, Australia",
+    "Auckland, New Zealand", "Wellington, New Zealand", "Christchurch, New Zealand",
+    "Queenstown, New Zealand", "Rotorua, New Zealand", "Dunedin, New Zealand",
+    
+    // Americas (non-USA)
+    "Toronto, Canada", "Montreal, Canada", "Vancouver, Canada", "Calgary, Canada",
+    "Edmonton, Canada", "Ottawa, Canada", "Winnipeg, Canada", "Quebec City, Canada",
+    "Mexico City, Mexico", "Guadalajara, Mexico", "Monterrey, Mexico",
+    "Cancun, Mexico", "Puerto Vallarta, Mexico", "Playa del Carmen, Mexico",
+    "São Paulo, Brazil", "Rio de Janeiro, Brazil", "Brasília, Brazil",
+    "Salvador, Brazil", "Fortaleza, Brazil", "Recife, Brazil",
+    "Belém, Brazil", "Manaus, Brazil", "Porto Alegre, Brazil",
+    "Buenos Aires, Argentina", "Córdoba, Argentina", "Rosario, Argentina",
+    "Mendoza, Argentina", "La Plata, Argentina", "Mar del Plata, Argentina",
+    "Santiago, Chile", "Valparaíso, Chile", "Concepción, Chile",
+    "La Serena, Chile", "Antofagasta, Chile", "Puerto Montt, Chile",
+    "Lima, Peru", "Cusco, Peru", "Arequipa, Peru", "Trujillo, Peru",
+    "Bogotá, Colombia", "Medellín, Colombia", "Cali, Colombia",
+    "Cartagena, Colombia", "Barranquilla, Colombia", "Pereira, Colombia",
+    "Caracas, Venezuela", "Maracaibo, Venezuela", "Valencia, Venezuela",
+    "Maracaibo, Venezuela", "Barquisimeto, Venezuela", "Mérida, Venezuela"
 ]
 
 export default function CreateItineraryPage() {
@@ -91,6 +245,10 @@ export default function CreateItineraryPage() {
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>()
     const [activeField, setActiveField] = useState<"from" | "to" | null>(null)
+    const [originSuggestions, setOriginSuggestions] = useState<string[]>([])
+    const [destinationSuggestions, setDestinationSuggestions] = useState<string[]>([])
+    const [showOriginSuggestions, setShowOriginSuggestions] = useState(false)
+    const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false)
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -137,6 +295,22 @@ export default function CreateItineraryPage() {
         form.setValue("partySize", totalPeople > 0 ? totalPeople : 1)
     }, [travelerCounts, form])
 
+    // Close suggestions when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Element
+            if (!target.closest('.city-suggestions-dropdown')) {
+                setShowOriginSuggestions(false)
+                setShowDestinationSuggestions(false)
+            }
+        }
+
+        document.addEventListener('click', handleClickOutside)
+        return () => {
+            document.removeEventListener('click', handleClickOutside)
+        }
+    }, [])
+
     if (status === "loading") {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
@@ -167,12 +341,23 @@ export default function CreateItineraryPage() {
 
     async function onSubmit(data: ItineraryInput) {
         setIsLoading(true)
+        setLoadingMessage(LOADING_MESSAGES[0])
+        
+        // Add timeout for better UX
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("Request timed out. Please try again.")), 60000)
+        })
+        
         try {
-            const response = await fetch("/api/itinerary/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            })
+            const response = await Promise.race([
+                fetch("/api/itinerary/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                }),
+                timeoutPromise
+            ]) as Response
+            
             if (!response.ok) {
                 const text = await response.text()
                 try {
@@ -186,7 +371,8 @@ export default function CreateItineraryPage() {
             toast.success("Your itinerary is ready!")
             router.push(`/itinerary/${result.itineraryId}`)
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Something went wrong")
+            const errorMessage = error instanceof Error ? error.message : "Something went wrong"
+            toast.error(errorMessage)
             setIsLoading(false)
         }
     }
@@ -197,59 +383,143 @@ export default function CreateItineraryPage() {
             return
         }
         setLocationLoading(true)
+
+        // Request location with better options
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 try {
                     const { latitude, longitude } = position.coords
+                    console.log("Got coordinates:", { latitude, longitude })
+
+                    // Use a more reliable geocoding service
                     const res = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10&addressdetails=1`,
-                        { headers: { "Accept-Language": "en" } }
+                        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10&addressdetails=1&accept-language=en`,
+                        {
+                            headers: {
+                                "Accept-Language": "en",
+                                "User-Agent": "MTA-Travel-App/1.0"
+                            }
+                        }
                     )
+
+                    if (!res.ok) {
+                        throw new Error(`Geocoding failed: ${res.status}`)
+                    }
+
                     const geo = await res.json()
+                    console.log("Geocoding response:", geo)
+
+                    if (geo.error) {
+                        throw new Error(geo.error)
+                    }
+
                     const addr = geo?.address || {}
 
-                    // Extended fallback chain — Nominatim returns different fields
-                    // depending on the region. Indian cities often use city_district or county.
+                    // Extended fallback chain for Indian cities and other regions
                     const cityName =
                         addr.city ||
                         addr.town ||
+                        addr.village ||
+                        addr.hamlet ||
+                        addr.municipality ||
                         addr.city_district ||
                         addr.county ||
                         addr.state_district ||
-                        addr.village ||
-                        addr.hamlet ||
                         addr.suburb ||
+                        addr.district ||
+                        addr.state ||
                         ""
 
                     const country = addr.country || ""
-                    const formatted = cityName
-                        ? country ? `${cityName}, ${country}` : cityName
-                        : ""
+                    const state = addr.state || ""
+
+                    // Format: "City, State, Country" for better accuracy
+                    let formatted = cityName
+                    if (cityName) {
+                        if (state && state !== cityName) {
+                            formatted = country ? `${cityName}, ${state}, ${country}` : `${cityName}, ${state}`
+                        } else if (country) {
+                            formatted = `${cityName}, ${country}`
+                        }
+                    }
 
                     if (formatted) {
                         fieldOnChange(formatted)
                         toast.success(`📍 Location detected: ${cityName}`)
+                        console.log("Successfully detected location:", formatted)
                     } else {
-                        // Last resort — use coordinates string
-                        toast.error("Could not detect your city. Please type it manually.")
-                        console.debug("Nominatim response:", geo)
+                        // Last resort — use coordinates as fallback
+                        const coordFallback = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+                        fieldOnChange(coordFallback)
+                        toast.success(`📍 Location detected: ${coordFallback}`)
+                        console.log("Using coordinates as fallback:", coordFallback)
                     }
-                } catch {
-                    toast.error("Failed to get location. Please type your origin city.")
+                } catch (error) {
+                    console.error("Location detection error:", error)
+                    toast.error("Failed to detect location. Please type your origin city.")
                 } finally {
                     setLocationLoading(false)
                 }
             },
             (err) => {
+                console.error("Geolocation error:", err)
+                let errorMessage = "Could not get your location. Please type your city."
+
                 if (err.code === 1) {
-                    toast.error("Location access denied. Please type your city.")
-                } else {
-                    toast.error("Could not get your location. Please type your city.")
+                    errorMessage = "Location access denied. Please allow location access or type your city."
+                } else if (err.code === 2) {
+                    errorMessage = "Location unavailable. Please type your city."
+                } else if (err.code === 3) {
+                    errorMessage = "Location request timed out. Please type your city."
                 }
+
+                toast.error(errorMessage)
                 setLocationLoading(false)
             },
-            { timeout: 10000, maximumAge: 60000 }
+            {
+                timeout: 15000,
+                maximumAge: 300000, // 5 minutes
+                enableHighAccuracy: true
+            }
         )
+    }
+
+    // City suggestion functions
+    const handleCityInputChange = (value: string, type: 'origin' | 'destination') => {
+        if (!value.trim()) {
+            if (type === 'origin') {
+                setOriginSuggestions([])
+                setShowOriginSuggestions(false)
+            } else {
+                setDestinationSuggestions([])
+                setShowDestinationSuggestions(false)
+            }
+            return
+        }
+
+        const filtered = CITY_DATABASE.filter(city => 
+            city.toLowerCase().includes(value.toLowerCase())
+        ).slice(0, 8)
+
+        if (type === 'origin') {
+            setOriginSuggestions(filtered)
+            setShowOriginSuggestions(true)
+        } else {
+            setDestinationSuggestions(filtered)
+            setShowDestinationSuggestions(true)
+        }
+    }
+
+    const handleCitySelect = (city: string, type: 'origin' | 'destination') => {
+        if (type === 'origin') {
+            form.setValue('origin', city)
+            setOriginSuggestions([])
+            setShowOriginSuggestions(false)
+        } else {
+            form.setValue('destination', city)
+            setDestinationSuggestions([])
+            setShowDestinationSuggestions(false)
+        }
     }
 
     const updateTravelerCount = (type: string, delta: number) => {
@@ -367,18 +637,42 @@ export default function CreateItineraryPage() {
                                                 render={({ field }) => (
                                                     <FormItem className="space-y-4">
                                                         <FormControl>
-                                                            <Input
-                                                                placeholder="e.g. Mumbai, India"
-                                                                className="h-14 text-lg text-center rounded-2xl"
-                                                                autoFocus
-                                                                {...field}
-                                                                onKeyDown={(e) => {
-                                                                    if (e.key === "Enter") {
-                                                                        e.preventDefault()
-                                                                        nextStep()
-                                                                    }
-                                                                }}
-                                                            />
+                                                            <div className="relative">
+                                                                <Input
+                                                                    placeholder="e.g. Mumbai, India"
+                                                                    className="h-14 text-lg text-center rounded-2xl"
+                                                                    autoFocus
+                                                                    {...field}
+                                                                    onChange={(e) => {
+                                                                        field.onChange(e)
+                                                                        handleCityInputChange(e.target.value, 'origin')
+                                                                    }}
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === "Enter") {
+                                                                            e.preventDefault()
+                                                                            nextStep()
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                {/* City Suggestions Dropdown */}
+                                                                {showOriginSuggestions && originSuggestions.length > 0 && (
+                                                                    <div className="city-suggestions-dropdown absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                                                                        {originSuggestions.map((city, index) => (
+                                                                            <button
+                                                                                key={city}
+                                                                                type="button"
+                                                                                onClick={() => handleCitySelect(city, 'origin')}
+                                                                                className="w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                                                                            >
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <MapPin className="w-4 h-4 text-gray-500" />
+                                                                                    <span className="text-sm">{city}</span>
+                                                                                </div>
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </FormControl>
                                                         <FormMessage className="text-center" />
                                                         <div className="flex flex-wrap justify-center gap-2 pt-2">
@@ -427,18 +721,42 @@ export default function CreateItineraryPage() {
                                                 render={({ field }) => (
                                                     <FormItem className="space-y-4">
                                                         <FormControl>
-                                                            <Input
-                                                                placeholder="e.g. Tokyo, Japan"
-                                                                className="h-14 text-lg text-center rounded-2xl"
-                                                                autoFocus
-                                                                {...field}
-                                                                onKeyDown={(e) => {
-                                                                    if (e.key === "Enter") {
-                                                                        e.preventDefault()
-                                                                        nextStep()
-                                                                    }
-                                                                }}
-                                                            />
+                                                            <div className="relative">
+                                                                <Input
+                                                                    placeholder="e.g. Tokyo, Japan"
+                                                                    className="h-14 text-lg text-center rounded-2xl"
+                                                                    autoFocus
+                                                                    {...field}
+                                                                    onChange={(e) => {
+                                                                        field.onChange(e)
+                                                                        handleCityInputChange(e.target.value, 'destination')
+                                                                    }}
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === "Enter") {
+                                                                            e.preventDefault()
+                                                                            nextStep()
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                {/* City Suggestions Dropdown */}
+                                                                {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+                                                                    <div className="city-suggestions-dropdown absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                                                                        {destinationSuggestions.map((city, index) => (
+                                                                            <button
+                                                                                key={city}
+                                                                                type="button"
+                                                                                onClick={() => handleCitySelect(city, 'destination')}
+                                                                                className="w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                                                                            >
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <MapPin className="w-4 h-4 text-gray-500" />
+                                                                                    <span className="text-sm">{city}</span>
+                                                                                </div>
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </FormControl>
                                                         <FormMessage className="text-center" />
                                                         <div className="flex flex-wrap justify-center gap-2 pt-2">

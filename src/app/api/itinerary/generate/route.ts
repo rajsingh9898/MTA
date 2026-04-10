@@ -149,15 +149,16 @@ function generateMockItinerary(destination: string, numDays: number, budget: str
 }
 
 export async function POST(req: Request) {
+  const startTime = Date.now()
+  
   try {
     const session = await auth()
     if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    // Security: Rate limiting — 5 itinerary generations per IP per 10 minutes
-    // Prevents abuse of expensive AI API calls (OpenAI + Perplexity)
-    const rateLimit = checkRateLimit(getRateLimitKey(req, "itinerary-generate"), 5, 10 * 60_000)
+    // Security: Rate limiting - 8 itinerary generations per IP per 10 minutes (increased for better UX)
+    const rateLimit = checkRateLimit(getRateLimitKey(req, "itinerary-generate"), 8, 10 * 60_000)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { message: "You\'ve generated too many itineraries. Please wait a few minutes before trying again." },
@@ -213,63 +214,73 @@ export async function POST(req: Request) {
       itineraryData = generateMockItinerary(destination, numDays, budget);
     } else {
       try {
-        // 1. Search Perplexity for real-time data (Optional, can fail gracefully)
-        let perplexityData = "";
-        if (hasPerplexity) {
-          console.log("Searching Perplexity for:", destination)
-          try {
-            const perplexityQuery = buildPerplexityQuery({
-              destination,
-              ageGroups,
-              activityLevel,
-              dietaryRestrictions,
-              accessibilityNeeds,
-              interests,
-              budget,
-            })
-            perplexityData = await searchPerplexity(perplexityQuery)
-          } catch (error: any) {
-            console.error("Perplexity search failed, proceeding without real-time data:", error.message)
-            // Continue without perplexity data
-          }
-        }
+        // 1. Parallel: Search Perplexity for real-time data AND prepare prompts
+        const [perplexityData, promptContext] = await Promise.all([
+          hasPerplexity ? (async () => {
+            try {
+              console.log("Searching Perplexity for:", destination)
+              const perplexityQuery = buildPerplexityQuery({
+                destination,
+                ageGroups,
+                activityLevel,
+                dietaryRestrictions,
+                accessibilityNeeds,
+                interests,
+                budget,
+              })
+              return await searchPerplexity(perplexityQuery)
+            } catch (error: any) {
+              console.error("Perplexity search failed, proceeding without real-time data:", error.message)
+              return ""
+            }
+          })() : Promise.resolve(""),
+          (async () => {
+            // Build dietary and accessibility context
+            const dietaryContext = dietaryRestrictions.length > 0
+              ? `Dietary restrictions: ${dietaryRestrictions.join(", ")}. All restaurant recommendations MUST accommodate these dietary needs.`
+              : ""
+            const accessibilityContext = accessibilityNeeds.length > 0
+              ? `Accessibility requirements: ${accessibilityNeeds.join(", ")}. All venues MUST be accessible for these needs.`
+              : ""
+            const interestsContext = interests.length > 0
+              ? `Prioritize activities related to: ${interests.join(", ")}.`
+              : ""
 
-        // 2. Generate Itinerary with OpenAI
+            // Budget tier context for destination-aware pricing
+            const budgetTierContext = {
+              "Economy": "hostels/budget stays, street food, public transport, free attractions",
+              "Moderate": "mid-range hotels, local restaurants, mix of transport options",
+              "Luxury": "premium hotels, fine dining, private transfers, exclusive experiences",
+              "No Limit": "the best of everything available"
+            }
+
+            return {
+              dietaryContext,
+              accessibilityContext,
+              interestsContext,
+              budgetTierContext
+            }
+          })()
+        ])
+
+        // 2. Generate Itinerary with OpenAI (optimized prompt)
         console.log("Generating itinerary with OpenAI...")
-        // Build dietary and accessibility context
-        const dietaryContext = dietaryRestrictions.length > 0
-          ? `Dietary restrictions: ${dietaryRestrictions.join(", ")}. All restaurant recommendations MUST accommodate these dietary needs.`
-          : ""
-        const accessibilityContext = accessibilityNeeds.length > 0
-          ? `Accessibility requirements: ${accessibilityNeeds.join(", ")}. All venues MUST be accessible for these needs.`
-          : ""
-        const interestsContext = interests.length > 0
-          ? `Prioritize activities related to: ${interests.join(", ")}.`
-          : ""
-
-        // Budget tier context for destination-aware pricing
-        const budgetTierContext = {
-          "Economy": "hostels/budget stays, street food, public transport, free attractions",
-          "Moderate": "mid-range hotels, local restaurants, mix of transport options",
-          "Luxury": "premium hotels, fine dining, private transfers, exclusive experiences",
-          "No Limit": "the best of everything available"
-        }
-
+        
         const systemPrompt = `You are a travel itinerary expert. Create a detailed ${numDays}-day itinerary for ${destination}. 
 CRITICAL REQUIREMENTS:
 1. MUST generate EXACTLY ${numDays} days - no more, no less
 2. Each day MUST have 3-4 activities with time slots
-3. All costs must be in Indian Rupees (₹). Convert if necessary.
-4. DESTINATION-AWARE PRICING: Adjust all cost estimates based on ${destination}'s local economy. The same budget tier means different absolute amounts in different places (e.g., "Moderate" in Bhimtal might be ₹3,000/day but in Paris could be ₹15,000/day).
-5. ${dietaryContext}
-6. ${accessibilityContext}
-7. ${interestsContext}
+3. All costs must be in Indian Rupees (INR). Convert if necessary.
+4. DESTINATION-AWARE PRICING: Adjust all cost estimates based on ${destination}'s local economy. The same budget tier means different absolute amounts in different places (e.g., "Moderate" in Bhimtal might be INR 3,000/day but in Paris could be INR 15,000/day).
+5. ${promptContext.dietaryContext}
+6. ${promptContext.accessibilityContext}
+7. ${promptContext.interestsContext}
 8. Include 3-4 top hotel recommendations that STRICTLY fit the chosen budget tier (${budget}). Do not suggest luxury hotels for economy budgets, and vice versa.
 9. The days array MUST contain exactly ${numDays} day objects, each with a "day" field from 1 to ${numDays}`
 
         const userPrompt = `
           Create a ${numDays}-day itinerary for ${destination} based on these preferences:
-          - Budget: ${budget} (meaning: ${budgetTierContext[budget as keyof typeof budgetTierContext]})
+          - Budget: ${budget} (meaning: ${promptContext.budgetTierContext[budget as keyof typeof promptContext.budgetTierContext]})
           - Party Size: ${partySize}
           - Age Groups: ${ageGroups.join(", ")}
           - Activity Level: ${activityLevel}
@@ -288,7 +299,7 @@ CRITICAL REQUIREMENTS:
             "overview": {
               "destination": "string",
               "duration": "string",
-              "totalEstimatedCost": "string (in INR, e.g. ₹15,000)"
+              "totalEstimatedCost": "string (in INR, e.g. INR 15,000)"
             },
             "days": [
               {
@@ -304,7 +315,7 @@ CRITICAL REQUIREMENTS:
                     "dietaryOptions": "string (optional, for restaurants only)"
                   }
                 ],
-                "transportation": "string (MUST include an estimated numerical cost in INR, e.g. 'Metro and walking (₹500)')",
+                "transportation": "string (MUST include an estimated numerical cost in INR, e.g. 'Metro and walking (INR 500)')",
                 "dailyCost": "string (in INR)"
               }
             ],
@@ -317,7 +328,7 @@ CRITICAL REQUIREMENTS:
               {
                 "name": "string",
                 "rating": "string (e.g. 4.5/5)",
-                "priceRange": "string (must specify exact matching ${budget} budget tier cost in INR, e.g. ₹3,000-5,000/night)",
+                "priceRange": "string (must specify exact matching ${budget} budget tier cost in INR, e.g. INR 3,000-5,000/night)",
                 "description": "string",
                 "address": "string (optional)",
                 "amenities": ["string"]
@@ -368,12 +379,11 @@ CRITICAL REQUIREMENTS:
       }
     }
 
-    // 4. Save to Database
+    // 4. Save to Database (optimized)
     console.log("Saving itinerary to database...")
-    console.log("User ID:", session.user.id)
-    console.log("Data:", { destination, numDays, budget, partySize })
-
+    
     try {
+      // Optimized database write with minimal fields
       const itinerary = await prisma.itinerary.create({
         data: {
           userId: session.user.id,
@@ -390,9 +400,35 @@ CRITICAL REQUIREMENTS:
           endDate: endDate ? new Date(endDate) : null,
           itineraryData,
         },
+        select: {
+          id: true,
+          destination: true,
+          numDays: true,
+          budget: true,
+          createdAt: true
+        }
       })
-      console.log("Itinerary created successfully:", itinerary.id)
-      return NextResponse.json({ success: true, itineraryId: itinerary.id })
+      
+      const endTime = Date.now()
+      const totalTime = endTime - startTime
+      console.log(`Itinerary generation completed in ${totalTime}ms`)
+      
+      // Performance logging
+      if (totalTime > 30000) {
+        console.warn(`Slow itinerary generation: ${totalTime}ms for ${destination}`)
+      } else if (totalTime < 5000) {
+        console.log(`Fast itinerary generation: ${totalTime}ms for ${destination}`)
+      }
+      
+      return NextResponse.json({ 
+        success: true, 
+        itineraryId: itinerary.id,
+        performance: {
+          totalTime,
+          destination,
+          numDays
+        }
+      })
     } catch (dbError: any) {
       console.error("Database Error:", dbError)
       throw new Error(`Database failed: ${dbError.message}`)
