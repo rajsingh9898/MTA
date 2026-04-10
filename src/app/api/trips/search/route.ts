@@ -24,27 +24,25 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     
     // Parse and validate search parameters
-    const searchParamsObj = Object.fromEntries(searchParams.entries())
+    const rawParams = Object.fromEntries(searchParams.entries())
     
-    // Convert string numbers to numbers
-    if (searchParamsObj.minPrice) searchParamsObj.minPrice = Number(searchParamsObj.minPrice)
-    if (searchParamsObj.maxPrice) searchParamsObj.maxPrice = Number(searchParamsObj.maxPrice)
-    if (searchParamsObj.minDuration) searchParamsObj.minDuration = Number(searchParamsObj.minDuration)
-    if (searchParamsObj.maxDuration) searchParamsObj.maxDuration = Number(searchParamsObj.maxDuration)
-    if (searchParamsObj.page) searchParamsObj.page = Number(searchParamsObj.page)
-    if (searchParamsObj.limit) searchParamsObj.limit = Number(searchParamsObj.limit)
+    // Convert string numbers to numbers with proper typing
+    const searchParamsObj: any = {
+      ...rawParams,
+      minDuration: rawParams.minDuration ? Number(rawParams.minDuration) : undefined,
+      maxDuration: rawParams.maxDuration ? Number(rawParams.maxDuration) : undefined,
+      page: rawParams.page ? Number(rawParams.page) : undefined,
+      limit: rawParams.limit ? Number(rawParams.limit) : undefined,
+    }
     
     const validatedParams = searchSchema.parse(searchParamsObj)
     
     // Build search filters
     const where: any = {}
     
-    // Text search across destination and description
+    // Text search across destination
     if (validatedParams.query) {
-      where.OR = [
-        { destination: { contains: validatedParams.query, mode: "insensitive" } },
-        { description: { contains: validatedParams.query, mode: "insensitive" } },
-      ]
+      where.destination = { contains: validatedParams.query, mode: "insensitive" }
     }
     
     // Specific destination filter
@@ -52,13 +50,7 @@ export async function GET(request: NextRequest) {
       where.destination = { contains: validatedParams.destination, mode: "insensitive" }
     }
     
-    // Price range filter
-    if (validatedParams.minPrice || validatedParams.maxPrice) {
-      where.price = {}
-      if (validatedParams.minPrice) where.price.gte = validatedParams.minPrice
-      if (validatedParams.maxPrice) where.price.lte = validatedParams.maxPrice
-    }
-    
+        
     // Duration range filter
     if (validatedParams.minDuration || validatedParams.maxDuration) {
       where.numDays = {}
@@ -81,15 +73,11 @@ export async function GET(request: NextRequest) {
     // Build sort options
     let orderBy: any = {}
     switch (validatedParams.sortBy) {
-      case "price":
-        orderBy = { price: validatedParams.sortOrder }
-        break
-      case "duration":
+      case "numDays":
         orderBy = { numDays: validatedParams.sortOrder }
         break
-      case "popularity":
-        // For popularity, we'll sort by a combination of views and bookings
-        orderBy = { createdAt: validatedParams.sortOrder } // Placeholder - implement popularity logic
+      case "destination":
+        orderBy = { destination: validatedParams.sortOrder }
         break
       default:
         orderBy = { createdAt: validatedParams.sortOrder }
@@ -119,7 +107,7 @@ export async function GET(request: NextRequest) {
     ])
     
     // Get search suggestions for autocomplete
-    let suggestions = []
+    const suggestions: string[] = []
     if (validatedParams.query && validatedParams.query.length > 2) {
       const destinationSuggestions = await prisma.itinerary.findMany({
         where: {
@@ -131,27 +119,22 @@ export async function GET(request: NextRequest) {
         distinct: ["destination"],
         take: 5,
       })
-      suggestions = destinationSuggestions.map(item => item.destination)
+      suggestions.push(...destinationSuggestions.map(item => item.destination))
     }
     
     // Format response
     const formattedTrips = trips.map(trip => ({
       id: trip.id,
       destination: trip.destination,
-      description: trip.description,
-      price: trip.price,
       numDays: trip.numDays,
       startDate: trip.startDate,
       endDate: trip.endDate,
       status: trip.status,
+      budget: trip.budget,
+      activityLevel: trip.activityLevel,
+      partySize: trip.partySize,
       createdAt: trip.createdAt,
       user: trip.user,
-      // Add computed fields
-      pricePerDay: trip.numDays > 0 ? Math.round(trip.price / trip.numDays) : 0,
-      formattedPrice: new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-      }).format(trip.price),
       formattedDate: trip.startDate ? new Date(trip.startDate).toLocaleDateString() : null,
     }))
     
@@ -169,9 +152,6 @@ export async function GET(request: NextRequest) {
         },
         filters: {
           query: validatedParams.query,
-          destination: validatedParams.destination,
-          minPrice: validatedParams.minPrice,
-          maxPrice: validatedParams.maxPrice,
           minDuration: validatedParams.minDuration,
           maxDuration: validatedParams.maxDuration,
           startDate: validatedParams.startDate,
@@ -185,24 +165,15 @@ export async function GET(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error("Search error:", error)
-    
+    console.error('Search error:', error)
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid search parameters",
-          details: error.errors,
-        },
+        { success: false, error: 'Invalid search parameters', details: error.issues },
         { status: 400 }
       )
     }
-    
     return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
+      { success: false, error: 'Failed to search trips' },
       { status: 500 }
     )
   }
