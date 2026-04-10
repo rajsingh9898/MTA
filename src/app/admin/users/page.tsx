@@ -1,16 +1,16 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { verifyAdminToken } from "@/lib/admin-auth"
+import { auth } from "@/lib/auth"
 import { Navbar } from "@/components/ui/navbar"
 import { Users, UserCheck, UserPlus, ArrowRight } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminUsersPage() {
-    const adminToken = await verifyAdminToken()
-    if (!adminToken) {
-        redirect("/admin/login")
+    const session = await auth()
+    if (!session?.user?.isAdmin) {
+        redirect("/login")
     }
 
     const [totalUsers, verifiedUsers, recentUsers] = await Promise.all([
@@ -24,6 +24,7 @@ export default async function AdminUsersPage() {
                 name: true,
                 email: true,
                 city: true,
+                phoneNumber: true,
                 isVerified: true,
                 createdAt: true,
             },
@@ -91,6 +92,7 @@ export default async function AdminUsersPage() {
                                         <th className="px-6 py-3">Name</th>
                                         <th className="px-6 py-3">Email</th>
                                         <th className="px-6 py-3">City</th>
+                                        <th className="px-6 py-3">Phone Number</th>
                                         <th className="px-6 py-3">Status</th>
                                     </tr>
                                 </thead>
@@ -100,6 +102,7 @@ export default async function AdminUsersPage() {
                                             <td className="px-6 py-3">{user.name || "Unnamed User"}</td>
                                             <td className="px-6 py-3 text-muted-foreground">{user.email}</td>
                                             <td className="px-6 py-3">{user.city || "-"}</td>
+                                            <td className="px-6 py-3">{user.phoneNumber || "-"}</td>
                                             <td className="px-6 py-3">
                                                 <span className={user.isVerified ? "text-green-600 text-xs font-semibold" : "text-amber-600 text-xs font-semibold"}>
                                                     {user.isVerified ? "Verified" : "Pending"}

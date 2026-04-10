@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { User, LogOut, UserCircle, Calendar, ChevronRight, Edit2 } from "lucide-react"
+import { User, LogOut, UserCircle, Calendar, ChevronRight, Edit2, Shield } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { profileStorage, ProfileData } from "@/lib/profile-storage"
 
@@ -13,6 +13,9 @@ export function ProfileTest() {
     const [isOpen, setIsOpen] = useState(false)
     const [profileData, setProfileData] = useState<ProfileData | null>(null)
     const dropdownRef = useRef<HTMLDivElement>(null)
+
+    // Debug: Log session data
+    console.log('Session data:', session)
 
     // Load profile data
     useEffect(() => {
@@ -240,6 +243,23 @@ export function ProfileTest() {
                                     <span className="font-medium">My Trips</span>
                                     <ChevronRight className="w-3.5 h-3.5 text-muted-foreground ml-auto group-hover:text-primary transition-colors" />
                                 </motion.button>
+
+                                {/* Admin Button - Only show for admin users */}
+                                {session?.user?.isAdmin && (
+                                    <motion.button 
+                                        className="w-full text-left px-3 py-2 text-sm hover:bg-orange-50 dark:hover:bg-orange-950/20 text-orange-600 dark:text-orange-400 transition-colors flex items-center gap-2 md:gap-3 group"
+                                        onClick={() => {
+                                            setIsOpen(false)
+                                            router.push("/admin")
+                                        }}
+                                        whileHover={{ x: 4 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <Shield className="w-4 h-4 group-hover:text-orange-700 dark:group-hover:text-orange-300 transition-colors" />
+                                        <span className="font-medium">Admin Panel</span>
+                                        <ChevronRight className="w-3.5 h-3.5 ml-auto group-hover:text-orange-700 dark:group-hover:text-orange-300 transition-colors" />
+                                    </motion.button>
+                                )}
                             </div>
 
                             {/* Divider */}

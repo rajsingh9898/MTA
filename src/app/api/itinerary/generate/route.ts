@@ -256,13 +256,16 @@ export async function POST(req: Request) {
         }
 
         const systemPrompt = `You are a travel itinerary expert. Create a detailed ${numDays}-day itinerary for ${destination}. 
-IMPORTANT RULES:
-1. All costs must be in Indian Rupees (₹). Convert if necessary.
-2. DESTINATION-AWARE PRICING: Adjust all cost estimates based on ${destination}'s local economy. The same budget tier means different absolute amounts in different places (e.g., "Moderate" in Bhimtal might be ₹3,000/day but in Paris could be ₹15,000/day).
-3. ${dietaryContext}
-4. ${accessibilityContext}
-5. ${interestsContext}
-6. Include 3-4 top hotel recommendations that STRICTLY fit the chosen budget tier (${budget}). Do not suggest luxury hotels for economy budgets, and vice versa.`
+CRITICAL REQUIREMENTS:
+1. MUST generate EXACTLY ${numDays} days - no more, no less
+2. Each day MUST have 3-4 activities with time slots
+3. All costs must be in Indian Rupees (₹). Convert if necessary.
+4. DESTINATION-AWARE PRICING: Adjust all cost estimates based on ${destination}'s local economy. The same budget tier means different absolute amounts in different places (e.g., "Moderate" in Bhimtal might be ₹3,000/day but in Paris could be ₹15,000/day).
+5. ${dietaryContext}
+6. ${accessibilityContext}
+7. ${interestsContext}
+8. Include 3-4 top hotel recommendations that STRICTLY fit the chosen budget tier (${budget}). Do not suggest luxury hotels for economy budgets, and vice versa.
+9. The days array MUST contain exactly ${numDays} day objects, each with a "day" field from 1 to ${numDays}`
 
         const userPrompt = `
           Create a ${numDays}-day itinerary for ${destination} based on these preferences:
@@ -276,6 +279,9 @@ IMPORTANT RULES:
 
           Use this real-time data (if available):
           ${perplexityData}
+
+          CRITICAL: MUST return EXACTLY ${numDays} days in the days array. 
+          The days array MUST have length ${numDays} with day numbers 1 through ${numDays}.
 
           Return a valid JSON object with this structure:
           {
@@ -329,6 +335,17 @@ IMPORTANT RULES:
         console.log("OpenAI successfully returned itinerary JSON.");
         itineraryData = JSON.parse(itineraryJson)
         console.log("Successfully parsed itinerary JSON.");
+
+        // Validate that we got the correct number of days
+        if (!itineraryData.days || !Array.isArray(itineraryData.days)) {
+          console.error("Invalid days array from AI, using fallback");
+          itineraryData = generateMockItinerary(destination, numDays, budget);
+        } else if (itineraryData.days.length !== numDays) {
+          console.error(`AI generated ${itineraryData.days.length} days instead of ${numDays}, using fallback`);
+          itineraryData = generateMockItinerary(destination, numDays, budget);
+        } else {
+          console.log(`Correct number of days generated: ${itineraryData.days.length}`);
+        }
 
       } catch (error: any) {
         console.error("AI Generation failed, falling back to mock data:", error.message);

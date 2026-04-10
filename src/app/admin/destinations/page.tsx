@@ -1,16 +1,16 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { verifyAdminToken } from "@/lib/admin-auth"
+import { auth } from "@/lib/auth"
 import { Navbar } from "@/components/ui/navbar"
 import { MapPinned, PlaneTakeoff, ArrowRight } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminDestinationsPage() {
-    const adminToken = await verifyAdminToken()
-    if (!adminToken) {
-        redirect("/admin/login")
+    const session = await auth()
+    if (!session?.user?.isAdmin) {
+        redirect("/login")
     }
 
     const groupedDestinations = await prisma.itinerary.groupBy({

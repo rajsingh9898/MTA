@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -31,6 +31,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
     const router = useRouter()
+    const { data: session } = useSession()
     const [isLoading, setIsLoading] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
 
@@ -58,8 +59,15 @@ export default function LoginPage() {
             }
 
             toast.success("Welcome back!")
-            router.push("/dashboard")
-            router.refresh()
+            // Check if user is admin and redirect accordingly
+            setTimeout(() => {
+                if (session?.user?.isAdmin) {
+                    router.push("/admin")
+                } else {
+                    router.push("/dashboard")
+                }
+                router.refresh()
+            }, 100)
         } catch {
             toast.error("Something went wrong. Please try again.")
         } finally {

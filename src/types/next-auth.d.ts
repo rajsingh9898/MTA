@@ -8,6 +8,7 @@ declare module "next-auth" {
             name?: string | null
             phoneNumber?: string | null
             city?: string | null
+            isAdmin?: boolean
         } & DefaultSession["user"]
     }
 
@@ -16,6 +17,7 @@ declare module "next-auth" {
         name?: string | null
         phoneNumber?: string | null
         city?: string | null
+        isAdmin?: boolean
     }
 }
 
@@ -25,5 +27,6 @@ declare module "next-auth/jwt" {
         name?: string | null
         phoneNumber?: string | null
         city?: string | null
+        isAdmin?: boolean
     }
 }

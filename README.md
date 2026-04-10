@@ -154,7 +154,7 @@ This project is licensed under the MIT License.
 
 # 👨‍💻 Developer
 
-Raj Singh
-AI & Full Stack Developer
+# Raj Singh
+## AI & Full Stack Developer
 
 ## ⭐ If you like this project, give it a star on GitHub!

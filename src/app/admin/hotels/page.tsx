@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { verifyAdminToken } from "@/lib/admin-auth"
+import { auth } from "@/lib/auth"
 import { Navbar } from "@/components/ui/navbar"
 import { Building2, ExternalLink, Search } from "lucide-react"
 
@@ -22,9 +22,9 @@ const quickHotelChecks = [
 ]
 
 export default async function AdminHotelsPage() {
-    const adminToken = await verifyAdminToken()
-    if (!adminToken) {
-        redirect("/admin/login")
+    const session = await auth()
+    if (!session?.user?.isAdmin) {
+        redirect("/login")
     }
 
     return (

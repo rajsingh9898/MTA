@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { verifyAdminToken } from "@/lib/admin-auth"
+import { auth } from "@/lib/auth"
 import { Navbar } from "@/components/ui/navbar"
 
 export const dynamic = "force-dynamic"
@@ -11,9 +11,9 @@ export default async function AdminTripDetailsPage({
 }: {
     params: Promise<{ id: string }>
 }) {
-    const adminToken = await verifyAdminToken()
-    if (!adminToken) {
-        redirect("/admin/login")
+    const session = await auth()
+    if (!session?.user?.isAdmin) {
+        redirect("/login")
     }
 
     const { id } = await params
