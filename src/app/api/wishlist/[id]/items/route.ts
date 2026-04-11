@@ -57,7 +57,7 @@ export async function POST(
     const existingItem = await prisma.wishlistItem.findUnique({
       where: {
         wishlistId_itineraryId: {
-          wishlistId: params.id,
+          wishlistId: id,
           itineraryId: validatedData.itineraryId,
         },
       },
@@ -72,7 +72,7 @@ export async function POST(
 
     const wishlistItem = await prisma.wishlistItem.create({
       data: {
-        wishlistId: params.id,
+        wishlistId: id,
         itineraryId: validatedData.itineraryId,
         notes: validatedData.notes,
       },

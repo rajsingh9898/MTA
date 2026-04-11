@@ -112,7 +112,7 @@ export async function PUT(
     }
 
     const updatedWishlist = await prisma.wishlist.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...validatedData,
         shareToken,
@@ -169,7 +169,7 @@ export async function DELETE(
     }
 
     await prisma.wishlist.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ success: true, message: "Wishlist deleted" })
