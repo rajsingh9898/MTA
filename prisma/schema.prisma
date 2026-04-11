@@ -21,9 +21,11 @@ model User {
   updatedAt     DateTime     @updatedAt @map("updated_at")
   isVerified    Boolean      @default(false) @map("is_verified")
   isAdmin       Boolean      @default(false) @map("is_admin")
-  
+
   itineraries   Itinerary[]
-  
+  wishlists     Wishlist[]
+  priceAlerts   PriceAlert[]
+
   @@map("users")
 }
 
@@ -56,45 +58,103 @@ model Otp {
 model Itinerary {
   id              String   @id @default(cuid())
   userId          String   @map("user_id")
-  
+
   // Trip Details
   destination     String
   startDate       DateTime? @map("start_date")
   endDate         DateTime? @map("end_date")
   numDays         Int      @map("num_days")
-  
+
   // Preferences
   budget          String   // "budget-friendly", "moderate", "luxury", "no-limit"
   ageGroups       String[] @map("age_groups") // ["children", "adults", "seniors"]
   partySize       Int      @map("party_size")
   activityLevel   String   @map("activity_level") // "relaxed", "moderate", "active", "very-active"
-  
+
   // New preference fields
   dietaryRestrictions String[] @default([]) @map("dietary_restrictions")
   accessibilityNeeds  String[] @default([]) @map("accessibility_needs")
   interests           String[] @default([]) @map("interests")
-  
+
   // Sharing
   shareToken      String?  @unique @map("share_token")
   isPublic        Boolean  @default(false) @map("is_public")
   status          String   @default("DRAFT") // "DRAFT", "ACCEPTED", "DECLINED"
-  
+
   // Generated Itinerary (JSONB)
   itineraryData   Json     @map("itinerary_data")
-  
+
   // Metadata
   name            String?
   regenerationCount Int    @default(0) @map("regeneration_count")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
-  
+
   // Relations
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  wishlistItems   WishlistItem[]
+  priceAlerts     PriceAlert[]
+
   @@index([userId])
   @@index([destination])
   @@index([createdAt])
   @@index([shareToken])
   @@map("itineraries")
+}
+
+model Wishlist {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String   // e.g., "Summer 2024", "Weekend Trips"
+  description String?
+  isPublic    Boolean  @default(false) @map("is_public")
+  shareToken  String?  @unique @map("share_token")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       WishlistItem[]
+
+  @@index([userId])
+  @@index([shareToken])
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id          String   @id @default(cuid())
+  wishlistId  String   @map("wishlist_id")
+  itineraryId String   @map("itinerary_id")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  wishlist    Wishlist  @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, itineraryId])
+  @@index([wishlistId])
+  @@index([itineraryId])
+  @@map("wishlist_items")
+}
+
+model PriceAlert {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  itineraryId String   @map("itinerary_id")
+  targetPrice Float    @map("target_price")
+  isActive    Boolean  @default(true) @map("is_active")
+  triggeredAt DateTime? @map("triggered_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([itineraryId])
+  @@index([isActive])
+  @@map("price_alerts")
 }
