@@ -16,6 +16,10 @@ const envSchema = z.object({
   UNSPLASH_ACCESS_KEY: z.string().min(1).optional(),
   SERPAPI_KEY: z.string().min(1).optional(),
   RAPIDAPI_KEY: z.string().min(1).optional(),
+  OPENWEATHER_API_KEY: z.string().min(1).optional(),
+  IQAIR_API_KEY: z.string().min(1).optional(),
+  GOOGLE_POLLEN_API_KEY: z.string().min(1).optional(),
+  EXCHANGERATE_API_KEY: z.string().min(1).optional(),
 })
 
 const env = envSchema.parse(process.env)

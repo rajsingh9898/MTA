@@ -23,6 +23,8 @@ model User {
   isAdmin       Boolean      @default(false) @map("is_admin")
 
   itineraries   Itinerary[]
+  notifications Notification[]
+  notificationPreferences NotificationPreferences?
   wishlists     Wishlist[]
   priceAlerts   PriceAlert[]
 
@@ -157,4 +159,61 @@ model PriceAlert {
   @@index([itineraryId])
   @@index([isActive])
   @@map("price_alerts")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  type        String   // "TRIP_STATUS", "PRICE_DROP", "RECOMMENDATION", "SOCIAL", "REMINDER"
+  title       String
+  message     String
+  data        Json?    // Additional data related to notification
+  priority    String   @default("NORMAL") // "LOW", "NORMAL", "HIGH", "URGENT"
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  expiresAt   DateTime? @map("expires_at")
+  
+  // Optional relations
+  itineraryId String?  @map("itinerary_id")
+  relatedUserId String? @map("related_user_id") // For social notifications
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([readAt])
+  @@index([createdAt])
+  @@index([itineraryId])
+  @@map("notifications")
+}
+
+model NotificationPreferences {
+  id              String   @id @default(cuid())
+  userId          String   @unique @map("user_id")
+  
+  // Notification types
+  tripStatusUpdates  Boolean @default(true) @map("trip_status_updates")
+  priceDropAlerts    Boolean @default(true) @map("price_drop_alerts")
+  recommendations    Boolean @default(true) @map("recommendations")
+  socialNotifications Boolean @default(true) @map("social_notifications")
+  reminders          Boolean @default(true) @map("reminders")
+  
+  // Delivery methods
+  emailNotifications Boolean @default(true) @map("email_notifications")
+  pushNotifications  Boolean @default(true) @map("push_notifications")
+  smsNotifications   Boolean @default(false) @map("sms_notifications")
+  
+  // Quiet hours
+  quietHoursEnabled  Boolean @default(false) @map("quiet_hours_enabled")
+  quietHoursStart    String? @map("quiet_hours_start") // "22:00"
+  quietHoursEnd      String? @map("quiet_hours_end")   // "08:00"
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }

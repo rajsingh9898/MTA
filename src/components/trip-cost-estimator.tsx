@@ -88,8 +88,17 @@ interface TripCostEstimatorProps {
     origin?: string
 }
 
-function formatINR(amount: number) {
-    return `₹${amount.toLocaleString("en-IN")}`
+const SUPPORTED_CURRENCIES = ["INR", "USD", "EUR", "GBP", "NPR", "AED"] as const
+type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number]
+
+function formatMoney(amount: number, currency: SupportedCurrency, conversionRate = 1) {
+    const converted = amount * conversionRate
+    const locale = currency === "INR" ? "en-IN" : "en-US"
+    return new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+    }).format(converted)
 }
 
 export function TripCostEstimator({
@@ -105,6 +114,10 @@ export function TripCostEstimator({
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [currency, setCurrency] = useState<SupportedCurrency>("INR")
+    const [exchangeRate, setExchangeRate] = useState(1)
+    const [exchangeLoading, setExchangeLoading] = useState(false)
+    const [exchangeError, setExchangeError] = useState<string | null>(null)
     const inFlightRef = useRef(false)
     const hasLoadedDataRef = useRef(false)
     const lastFetchAtRef = useRef(0)
@@ -164,6 +177,43 @@ export function TripCostEstimator({
         }, 300)
     }
 
+    async function handleCurrencyChange(nextCurrency: SupportedCurrency) {
+        setCurrency(nextCurrency)
+
+        if (nextCurrency === "INR") {
+            setExchangeRate(1)
+            setExchangeError(null)
+            return
+        }
+
+        setExchangeLoading(true)
+
+        try {
+            const response = await fetch(`/api/exchange-rate?from=INR&to=${nextCurrency}&amount=1`)
+            if (!response.ok) {
+                throw new Error("Failed to fetch exchange rate")
+            }
+
+            const data = (await response.json()) as {
+                exchange?: { rate?: number }
+            }
+
+            const rate = data.exchange?.rate
+            if (!rate || !Number.isFinite(rate)) {
+                throw new Error("Invalid exchange rate")
+            }
+
+            setExchangeRate(rate)
+            setExchangeError(null)
+        } catch {
+            setExchangeRate(1)
+            setExchangeError(`Could not convert INR to ${nextCurrency}. Showing INR values.`)
+            setCurrency("INR")
+        } finally {
+            setExchangeLoading(false)
+        }
+    }
+
     const hasFlight = Boolean(costData?.flights.available)
     const hasTrain = Boolean(costData?.trains.available)
     const hasAlternateRoute = Boolean(costData?.combinedRoute?.available)
@@ -182,10 +232,36 @@ export function TripCostEstimator({
                         Live
                     </span>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing || loading} className="gap-2 rounded-full">
-                    {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Refresh
-                </Button>
+                <div className="flex items-center gap-2">
+                    <select
+                        value={currency}
+                        onChange={(e) => {
+                            const next = e.target.value as SupportedCurrency
+                            void handleCurrencyChange(next)
+                        }}
+                        disabled={exchangeLoading}
+                        className="h-8 rounded-full border border-border bg-background px-3 text-xs font-medium"
+                        aria-label="Select currency"
+                    >
+                        {SUPPORTED_CURRENCIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </select>
+                    <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing || loading} className="gap-2 rounded-full">
+                        {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Refresh
+                    </Button>
+                </div>
             </div>
+
+            {(currency !== "INR" || exchangeError) && (
+                <div className="px-6 py-2 text-[11px] text-muted-foreground border-b border-border/30 bg-muted/20">
+                    {exchangeError
+                        ? exchangeError
+                        : exchangeLoading
+                            ? `Fetching live INR to ${currency} rate...`
+                            : `Converted from INR to ${currency} at ${exchangeRate.toFixed(4)}.`}
+                </div>
+            )}
 
             <AnimatePresence mode="wait">
                 {loading && (
@@ -238,11 +314,11 @@ export function TripCostEstimator({
                                             {costData.flights.originAirport?.name} → {costData.flights.destAirport?.name}
                                         </p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            {formatINR(costData.flights.perPerson)}/person × {partySize} = {formatINR(costData.flights.total)}
+                                            {formatMoney(costData.flights.perPerson, currency, exchangeRate)}/person × {partySize} = {formatMoney(costData.flights.total, currency, exchangeRate)}
                                         </p>
                                     </div>
                                     <span className="font-semibold text-sm whitespace-nowrap pt-1">
-                                        {formatINR(costData.flights.total)}
+                                        {formatMoney(costData.flights.total, currency, exchangeRate)}
                                     </span>
                                 </div>
                             )}
@@ -279,27 +355,27 @@ export function TripCostEstimator({
                                             {costData.trains.originStation?.name} → {costData.trains.destStation?.name}
                                         </p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            {formatINR(costData.trains.perPerson)}/person × {partySize} = {formatINR(costData.trains.total)}
+                                            {formatMoney(costData.trains.perPerson, currency, exchangeRate)}/person × {partySize} = {formatMoney(costData.trains.total, currency, exchangeRate)}
                                         </p>
                                         <div className="mt-3 flex flex-wrap gap-2">
                                             <span className="text-[11px] font-semibold bg-orange-50 dark:bg-orange-900/20 px-2.5 py-1 rounded text-orange-700 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30">
-                                                SL: {formatINR(costData.trains.sleeper)}
+                                                SL: {formatMoney(costData.trains.sleeper, currency, exchangeRate)}
                                             </span>
                                             <span className="text-[11px] font-semibold bg-gray-50 dark:bg-gray-900/20 px-2.5 py-1 rounded">
-                                                3A: {formatINR(costData.trains.threeAC)}
+                                                3A: {formatMoney(costData.trains.threeAC, currency, exchangeRate)}
                                             </span>
                                             <span className="text-[11px] font-semibold bg-gray-50 dark:bg-gray-900/20 px-2.5 py-1 rounded">
-                                                2A: {formatINR(costData.trains.twoAC)}
+                                                2A: {formatMoney(costData.trains.twoAC, currency, exchangeRate)}
                                             </span>
                                             {costData.trains.oneAC > 0 && (
                                                 <span className="text-[11px] font-semibold bg-gray-50 dark:bg-gray-900/20 px-2.5 py-1 rounded">
-                                                    1A: {formatINR(costData.trains.oneAC)}
+                                                    1A: {formatMoney(costData.trains.oneAC, currency, exchangeRate)}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
                                     <span className="font-semibold text-sm whitespace-nowrap pt-1">
-                                        {formatINR(costData.trains.total)}
+                                        {formatMoney(costData.trains.total, currency, exchangeRate)}
                                     </span>
                                 </div>
                             )}
@@ -322,13 +398,13 @@ export function TripCostEstimator({
                                         <div className="mt-2 space-y-1">
                                             {costData.combinedRoute?.segments.map((seg, idx) => (
                                                 <p key={`${seg.mode}-${idx}`} className="text-[11px] text-muted-foreground">
-                                                    {idx + 1}. {seg.mode === "train" ? "Train" : "Flight"}: {seg.codeFrom || seg.from.split(",")[0]} to {seg.codeTo || seg.to.split(",")[0]} · {formatINR(seg.perPerson)}/person{seg.exactFare ? " · exact" : " · estimated"}
+                                                    {idx + 1}. {seg.mode === "train" ? "Train" : "Flight"}: {seg.codeFrom || seg.from.split(",")[0]} to {seg.codeTo || seg.to.split(",")[0]} · {formatMoney(seg.perPerson, currency, exchangeRate)}/person{seg.exactFare ? " · exact" : " · estimated"}
                                                 </p>
                                             ))}
                                         </div>
                                     </div>
                                     <span className="font-semibold text-sm whitespace-nowrap pt-1">
-                                        {formatINR(costData.combinedRoute?.total || 0)}
+                                        {formatMoney(costData.combinedRoute?.total || 0, currency, exchangeRate)}
                                     </span>
                                 </div>
                             )}

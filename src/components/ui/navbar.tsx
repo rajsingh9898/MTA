@@ -4,7 +4,8 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Home, Menu, X } from "lucide-react"
+import { Home, Menu, X, Heart } from "lucide-react"
+import { NotificationBell } from "@/components/notification-bell"
 import { motion, AnimatePresence } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
@@ -39,9 +40,10 @@ export function Navbar() {
             { href: "/create", label: "Create Trip" },
         ]
 
-        // Only add Dashboard link if user is authenticated
+        // Only add Dashboard and Wishlist links if user is authenticated
         if (session) {
             links.splice(1, 0, { href: "/dashboard", label: "Dashboard" })
+            links.splice(2, 0, { href: "/wishlist", label: "Wishlist" })
         }
 
         return links
@@ -111,6 +113,9 @@ export function Navbar() {
 
                         {/* Right Actions */}
                         <div className="flex items-center gap-2">
+                            {/* Notification Bell — authenticated only */}
+                            {session && <NotificationBell />}
+
                             {/* Profile Dropdown */}
                             <ProfileTest />
 

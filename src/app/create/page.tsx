@@ -35,6 +35,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { differenceInDays, format } from "date-fns"
 import { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
+import { ClimatePreview } from "@/components/climate-preview"
 
 const STEPS = [
     { id: 1, title: "Origin", description: "Where are you traveling from?", icon: LocateFixed },
@@ -927,6 +928,12 @@ export default function CreateItineraryPage() {
                                                                     )}
                                                                 </AnimatePresence>
                                                             </div>
+
+                                                            <ClimatePreview
+                                                                destination={form.watch("destination")}
+                                                                startDate={form.watch("startDate")}
+                                                                endDate={form.watch("endDate")}
+                                                            />
                                                         </FormItem>
                                                     )}
                                                 />

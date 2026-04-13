@@ -48,6 +48,7 @@ import { DeleteItineraryButton } from "@/components/delete-itinerary-button"
 import { ExportPdfButton } from "@/components/export-pdf-button"
 import { DailyHotelSuggestion } from "@/components/daily-hotel-suggestion"
 import { TripCostEstimator } from "@/components/trip-cost-estimator"
+import { WeatherWidget } from "@/components/weather-widget"
 
 function getDetailedDate(startDateObj: string | Date | null | undefined, dayIdx: number) {
     if (!startDateObj) return null;
@@ -656,6 +657,18 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                             partySize={itinerary.partySize}
                             budget={itinerary.budget}
                             hotel={data.hotels?.[0] || null}
+                        />
+                    </div>
+
+                    <div className="mb-12">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                            <h2 className="text-xl font-semibold">Weather And Packing Intelligence</h2>
+                        </div>
+                        <WeatherWidget
+                            destination={data.overview.destination || itinerary.destination}
+                            startDate={itinerary.startDate}
+                            endDate={itinerary.endDate}
                         />
                     </div>
 
