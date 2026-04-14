@@ -379,11 +379,34 @@ export default function CreateItineraryPage() {
     }
 
     const handleDetectLocation = async (fieldOnChange: (val: string) => void) => {
+        setLocationLoading(true)
+
+        const fallbackToIPLocation = async () => {
+            try {
+                // Use BigDataCloud IP geolocation (less likely to be blocked than ipapi.co)
+                const res = await fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=en")
+                const data = await res.json()
+                const cityName = data.city || data.locality || data.principalSubdivision
+                
+                if (cityName && data.countryName) {
+                    const formatted = `${cityName}, ${data.countryName}`
+                    fieldOnChange(formatted)
+                    toast.success(`📍 Location detected: ${cityName}`)
+                } else {
+                    throw new Error("Invalid IP location data")
+                }
+            } catch (error) {
+                console.error("IP Geolocator failed:", error)
+                toast.error("Location access denied. Please allow location access or type your city.")
+            } finally {
+                setLocationLoading(false)
+            }
+        }
+
         if (!navigator.geolocation) {
-            toast.error("Geolocation is not supported by your browser")
+            await fallbackToIPLocation()
             return
         }
-        setLocationLoading(true)
 
         // Request location with better options
         navigator.geolocation.getCurrentPosition(
@@ -392,15 +415,9 @@ export default function CreateItineraryPage() {
                     const { latitude, longitude } = position.coords
                     console.log("Got coordinates:", { latitude, longitude })
 
-                    // Use a more reliable geocoding service
+                    // Use BigDataCloud for reverse geocoding (Nominatim often blocks production domains)
                     const res = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10&addressdetails=1&accept-language=en`,
-                        {
-                            headers: {
-                                "Accept-Language": "en",
-                                "User-Agent": "MTA-Travel-App/1.0"
-                            }
-                        }
+                        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
                     )
 
                     if (!res.ok) {
@@ -410,29 +427,9 @@ export default function CreateItineraryPage() {
                     const geo = await res.json()
                     console.log("Geocoding response:", geo)
 
-                    if (geo.error) {
-                        throw new Error(geo.error)
-                    }
-
-                    const addr = geo?.address || {}
-
-                    // Extended fallback chain for Indian cities and other regions
-                    const cityName =
-                        addr.city ||
-                        addr.town ||
-                        addr.village ||
-                        addr.hamlet ||
-                        addr.municipality ||
-                        addr.city_district ||
-                        addr.county ||
-                        addr.state_district ||
-                        addr.suburb ||
-                        addr.district ||
-                        addr.state ||
-                        ""
-
-                    const country = addr.country || ""
-                    const state = addr.state || ""
+                    const cityName = geo.city || geo.locality || geo.principalSubdivision || ""
+                    const country = geo.countryName || ""
+                    const state = geo.principalSubdivision || ""
 
                     // Format: "City, State, Country" for better accuracy
                     let formatted = cityName
@@ -448,34 +445,23 @@ export default function CreateItineraryPage() {
                         fieldOnChange(formatted)
                         toast.success(`📍 Location detected: ${cityName}`)
                         console.log("Successfully detected location:", formatted)
+                        setLocationLoading(false)
                     } else {
                         // Last resort — use coordinates as fallback
                         const coordFallback = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
                         fieldOnChange(coordFallback)
                         toast.success(`📍 Location detected: ${coordFallback}`)
                         console.log("Using coordinates as fallback:", coordFallback)
+                        setLocationLoading(false)
                     }
                 } catch (error) {
                     console.error("Location detection error:", error)
-                    toast.error("Failed to detect location. Please type your origin city.")
-                } finally {
-                    setLocationLoading(false)
+                    await fallbackToIPLocation()
                 }
             },
-            (err) => {
+            async (err) => {
                 console.error("Geolocation error:", err)
-                let errorMessage = "Could not get your location. Please type your city."
-
-                if (err.code === 1) {
-                    errorMessage = "Location access denied. Please allow location access or type your city."
-                } else if (err.code === 2) {
-                    errorMessage = "Location unavailable. Please type your city."
-                } else if (err.code === 3) {
-                    errorMessage = "Location request timed out. Please type your city."
-                }
-
-                toast.error(errorMessage)
-                setLocationLoading(false)
+                await fallbackToIPLocation()
             },
             {
                 timeout: 15000,
