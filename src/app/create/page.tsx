@@ -383,21 +383,22 @@ export default function CreateItineraryPage() {
 
         const fallbackToIPLocation = async () => {
             try {
-                // Use BigDataCloud IP geolocation (less likely to be blocked than ipapi.co)
-                const res = await fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=en")
-                const data = await res.json()
-                const cityName = data.city || data.locality || data.principalSubdivision
+                // Call our own server-side API to bypass browser adblockers entirely!
+                const res = await fetch("/api/location")
+                if (!res.ok) throw new Error("Location API failed")
                 
-                if (cityName && data.countryName) {
-                    const formatted = `${cityName}, ${data.countryName}`
+                const data = await res.json()
+                
+                if (data.city) {
+                    const formatted = data.country ? `${data.city}, ${data.country}` : data.city
                     fieldOnChange(formatted)
-                    toast.success(`📍 Location detected: ${cityName}`)
+                    toast.success(`📍 Location detected: ${data.city}`)
                 } else {
                     throw new Error("Invalid IP location data")
                 }
             } catch (error) {
-                console.error("IP Geolocator failed:", error)
-                toast.error("Location access denied. Please allow location access or type your city.")
+                console.error("Server IP Geolocator failed:", error)
+                toast.error("Location access completely blocked. Please type your city manually.")
             } finally {
                 setLocationLoading(false)
             }
