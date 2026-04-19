@@ -26,6 +26,7 @@ interface WishlistButtonProps {
   onToggle?: (isWishlisted: boolean) => void
 }
 
+
 export function WishlistButton({
   itineraryId,
   isWishlisted = false,

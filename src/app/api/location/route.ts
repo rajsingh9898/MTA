@@ -2,24 +2,70 @@ import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
     try {
-        // 1. Try to get location from Vercel headers (most reliable on hosted platform)
+        const { searchParams } = new URL(request.url)
+        const lat = searchParams.get("lat")
+        const lon = searchParams.get("lon")
+
+        // 1. Accurate Coordinate-based Reverse Geocoding via Server (Bypasses adblockers)
+        if (lat && lon) {
+            try {
+                // Primary: BigDataCloud
+                const reverseGeoRes = await fetch(
+                    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+                )
+                
+                if (reverseGeoRes.ok) {
+                    const geo = await reverseGeoRes.json()
+                    const cityName = geo.city || geo.locality || geo.principalSubdivision || ""
+                    if (cityName) {
+                        return NextResponse.json({
+                            city: cityName,
+                            country: geo.countryName || ""
+                        })
+                    }
+                }
+
+                // Fallback: Nominatim (Now safer since it's server-side)
+                const nominatimRes = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&addressdetails=1&accept-language=en`,
+                    {
+                        headers: {
+                            "Accept-Language": "en",
+                            "User-Agent": "MTA-Travel-App/1.0 (Server-Side)"
+                        }
+                    }
+                )
+                if (nominatimRes.ok) {
+                    const addr = (await nominatimRes.json()).address || {}
+                    const cityName = addr.city || addr.town || addr.village || addr.municipality || addr.state_district || addr.district || addr.state || ""
+                    if (cityName) {
+                        return NextResponse.json({
+                            city: cityName,
+                            country: addr.country || ""
+                        })
+                    }
+                }
+            } catch (e) {
+                console.error("Server reverse coordinate geocoding failed:", e)
+            }
+        }
+
+        // 2. IP-based location (No coords provided, or coordinate lookup failed)
+        // Try to get location from Vercel headers (most reliable on hosted platform)
         const city = request.headers.get("x-vercel-ip-city")
         const country = request.headers.get("x-vercel-ip-country")
         
         if (city) {
-            // Vercel handles it natively! 
-            // Return decoded city (headers are URI encoded)
             return NextResponse.json({
                 city: decodeURIComponent(city),
                 country: country || ""
             })
         }
 
-        // 2. If no Vercel headers (e.g. running locally or on another host), try server-side fetch
+        // 3. Fallback server-side IP fetch
         const forwardedFor = request.headers.get("x-forwarded-for")
         const realIp = request.headers.get("x-real-ip")
         
-        // Grab the first IP if there's a list
         let ip = ""
         if (forwardedFor) {
             ip = forwardedFor.split(",")[0].trim()
@@ -27,13 +73,11 @@ export async function GET(request: Request) {
             ip = realIp.trim()
         }
 
-        // Ignore local IPs for external APIs
         let ipUrlPath = ""
         if (ip && ip !== "::1" && ip !== "127.0.0.1" && !ip.startsWith("10.") && !ip.startsWith("192.168.")) {
             ipUrlPath = ip
         }
 
-        // Try IP-API Server Side (super fast, IP-based, no CORS, doesn't get blocked by browser adblockers because it's server-side!)
         const res = await fetch(`http://ip-api.com/json/${ipUrlPath}`)
         if (res.ok) {
             const data = await res.json()
@@ -45,7 +89,6 @@ export async function GET(request: Request) {
             }
         }
 
-        // Try ipapi.co as a fallback server-side
         const res2 = await fetch(`https://ipapi.co/${ipUrlPath ? ipUrlPath + '/' : ''}json/`)
         if (res2.ok) {
             const data2 = await res2.json()

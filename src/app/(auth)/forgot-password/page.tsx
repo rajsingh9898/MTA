@@ -24,7 +24,9 @@ import { Input } from "@/components/ui/input"
 
 // Schema for Step 1: Email
 const emailSchema = z.object({
-    email: z.string().email("Please enter a valid email"),
+    email: z.string()
+        .email("Please enter a valid email")
+        .max(40, "Email must be at most 40 characters"),
 })
 
 // Schema for Step 2: OTP + New Password
@@ -154,7 +156,7 @@ export default function ForgotPasswordPage() {
                                         <FormItem>
                                             <FormLabel>Email</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="name@example.com" type="email" disabled={isLoading} {...field} />
+                                                <Input placeholder="name@example.com" type="email" maxLength={64} disabled={isLoading} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

@@ -23,7 +23,9 @@ import {
 import { Input } from "@/components/ui/input"
 
 const loginSchema = z.object({
-    email: z.string().email("Please enter a valid email"),
+    email: z.string()
+        .email("Please enter a valid email")
+        .max(40, "Email must be at most 40 characters"),
     password: z.string().min(1, "Password is required"),
 })
 
@@ -106,6 +108,7 @@ export default function LoginPage() {
                                         placeholder="you@example.com"
                                         type="email"
                                         autoComplete="email"
+                                        maxLength={64}
                                         disabled={isLoading}
                                         {...field}
                                     />

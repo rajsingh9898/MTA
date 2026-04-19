@@ -20,6 +20,7 @@ const envSchema = z.object({
   IQAIR_API_KEY: z.string().min(1).optional(),
   GOOGLE_POLLEN_API_KEY: z.string().min(1).optional(),
   EXCHANGERATE_API_KEY: z.string().min(1).optional(),
+  CITY_STATE_COUNTRY_API_KEY: z.string().min(1).optional(),
 })
 
 const env = envSchema.parse(process.env)

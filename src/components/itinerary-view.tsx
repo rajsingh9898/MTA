@@ -155,6 +155,79 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
     const [editingDay, setEditingDay] = useState<Day | null>(null)
     const [removingDay, setRemovingDay] = useState<number | null>(null)
     const [isSavingDay, setIsSavingDay] = useState(false)
+    const [isTransportOpen, setIsTransportOpen] = useState(false)
+    const [isHotelOpen, setIsHotelOpen] = useState(false)
+    const [isWeatherOpen, setIsWeatherOpen] = useState(false)
+    const [pageCurrency, setPageCurrency] = useState<"INR" | "USD" | "EUR" | "GBP" | "NPR" | "AED">("INR")
+    const [pageExchangeRate, setPageExchangeRate] = useState(1)
+    const [currencyLoading, setCurrencyLoading] = useState(false)
+
+    function extractAmount(value: string | undefined | null): number | null {
+        if (!value) return null
+        const match = value.replace(/,/g, "").match(/\d+(\.\d+)?/)
+        if (!match) return null
+        const parsed = Number(match[0])
+        return Number.isFinite(parsed) ? parsed : null
+    }
+
+    function formatCurrency(amount: number): string {
+        const converted = amount * pageExchangeRate
+        const locale = pageCurrency === "INR" ? "en-IN" : "en-US"
+        return new Intl.NumberFormat(locale, {
+            style: "currency",
+            currency: pageCurrency,
+            maximumFractionDigits: 0,
+        }).format(converted)
+    }
+
+    function formatConvertedAmount(value: string | undefined | null, fallback = "N/A"): string {
+        const amount = extractAmount(value)
+        if (amount === null) return fallback
+        return formatCurrency(amount)
+    }
+
+    function formatActivityCost(value: string): string {
+        if (pageCurrency === "INR") return value
+        if (value.toLowerCase().includes("free")) return value
+        const amount = extractAmount(value)
+        if (amount === null) return value
+        const converted = formatCurrency(amount)
+        return value.replace(/₹?\s*[\d,]+(?:\.\d+)?|\$\s*[\d,]+(?:\.\d+)?/, converted)
+    }
+
+    async function handlePageCurrencyChange(nextCurrency: "INR" | "USD" | "EUR" | "GBP" | "NPR" | "AED") {
+        setPageCurrency(nextCurrency)
+
+        if (nextCurrency === "INR") {
+            setPageExchangeRate(1)
+            return
+        }
+
+        setCurrencyLoading(true)
+        try {
+            const response = await fetch(`/api/exchange-rate?from=INR&to=${nextCurrency}&amount=1`)
+            if (!response.ok) {
+                throw new Error("Failed to fetch exchange rate")
+            }
+
+            const payload = (await response.json()) as {
+                exchange?: { rate?: number }
+            }
+
+            const rate = payload.exchange?.rate
+            if (!rate || !Number.isFinite(rate)) {
+                throw new Error("Invalid exchange rate")
+            }
+
+            setPageExchangeRate(rate)
+        } catch {
+            toast.error(`Could not convert INR to ${nextCurrency}. Falling back to INR.`)
+            setPageCurrency("INR")
+            setPageExchangeRate(1)
+        } finally {
+            setCurrencyLoading(false)
+        }
+    }
 
     async function handleStatusUpdate(status: "ACCEPTED" | "DECLINED") {
         try {
@@ -515,7 +588,26 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                             </div>
                         )}
 
-                        <DeleteItineraryButton id={itinerary.id} />
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={pageCurrency}
+                                onChange={(e) => {
+                                    const nextCurrency = e.target.value as "INR" | "USD" | "EUR" | "GBP" | "NPR" | "AED"
+                                    void handlePageCurrencyChange(nextCurrency)
+                                }}
+                                disabled={currencyLoading}
+                                className="h-9 rounded-full border border-border bg-background px-3 text-sm font-medium"
+                                aria-label="Change page currency"
+                            >
+                                <option value="INR">INR</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                                <option value="NPR">NPR</option>
+                                <option value="AED">AED</option>
+                            </select>
+                            <DeleteItineraryButton id={itinerary.id} />
+                        </div>
                     </motion.div>
 
                     {/* Update Dialog */}
@@ -600,7 +692,7 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                             <div>
                                 <p className="label mb-2">Total Budget</p>
                                 <p className="text-xl font-semibold flex items-center gap-1">
-                                    {data.overview.totalEstimatedCost || data.summary?.totalEstimatedCost}
+                                    {formatConvertedAmount(data.overview.totalEstimatedCost || data.summary?.totalEstimatedCost, "N/A")}
                                 </p>
                             </div>
                             <p className="text-[10px] text-muted-foreground mt-2 leading-tight">
@@ -610,7 +702,7 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                         <div className="bg-card border border-border/60 rounded-2xl p-5">
                             <p className="label mb-2">Transportation</p>
                             <p className="text-xl font-semibold flex items-center gap-1">
-                                {data.days ? calculateTotalTransportationCost(data.days) : "N/A"}
+                                {data.days ? formatConvertedAmount(calculateTotalTransportationCost(data.days), "N/A") : "N/A"}
                             </p>
                             <p className="text-[10px] text-muted-foreground mt-2 leading-tight">
                                 *Approximate sum
@@ -635,41 +727,108 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                     </motion.div>
 
                     {/* Trip Cost Estimator */}
-                    <TripCostEstimator
-                        destination={itinerary.destination}
-                        numDays={itinerary.numDays}
-                        partySize={itinerary.partySize}
-                        budget={itinerary.budget}
-                        startDate={itinerary.startDate}
-                        endDate={itinerary.endDate}
-                        origin={data.tripMetadata?.origin || ""}
-                    />
+                    <div className="mb-12">
+                        <div
+                            className="flex items-center justify-between gap-3 mb-4 cursor-pointer select-none"
+                            onClick={() => setIsTransportOpen((prev) => !prev)}
+                            role="button"
+                            aria-expanded={isTransportOpen}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault()
+                                    setIsTransportOpen((prev) => !prev)
+                                }
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-primary" />
+                                <h2 className="text-xl font-semibold">Transport Fares</h2>
+                            </div>
+                            <ChevronRight
+                                className={`w-5 h-5 text-muted-foreground transition-transform ${isTransportOpen ? "rotate-90" : "rotate-0"}`}
+                            />
+                        </div>
+
+                        {isTransportOpen && (
+                            <TripCostEstimator
+                                destination={itinerary.destination}
+                                numDays={itinerary.numDays}
+                                partySize={itinerary.partySize}
+                                budget={itinerary.budget}
+                                startDate={itinerary.startDate}
+                                endDate={itinerary.endDate}
+                                origin={data.tripMetadata?.origin || ""}
+                                selectedCurrency={pageCurrency}
+                            />
+                        )}
+                    </div>
 
                     {/* Best Hotel */}
                     <div className="mt-10 mb-12">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Sparkles className="w-5 h-5 text-primary" />
-                            <h2 className="text-xl font-semibold">Best Hotel for This Trip</h2>
+                        <div
+                            className="flex items-center justify-between gap-3 mb-4 cursor-pointer select-none"
+                            onClick={() => setIsHotelOpen((prev) => !prev)}
+                            role="button"
+                            aria-expanded={isHotelOpen}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault()
+                                    setIsHotelOpen((prev) => !prev)
+                                }
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-primary" />
+                                <h2 className="text-xl font-semibold">Best Hotel for This Trip</h2>
+                            </div>
+                            <ChevronRight
+                                className={`w-5 h-5 text-muted-foreground transition-transform ${isHotelOpen ? "rotate-90" : "rotate-0"}`}
+                            />
                         </div>
-                        <DailyHotelSuggestion
-                            destination={data.overview.destination}
-                            specificDate={getDetailedDate(itinerary.startDate, 0)?.toISOString()}
-                            partySize={itinerary.partySize}
-                            budget={itinerary.budget}
-                            hotel={data.hotels?.[0] || null}
-                        />
+
+                        {isHotelOpen && (
+                            <DailyHotelSuggestion
+                                destination={data.overview.destination}
+                                specificDate={getDetailedDate(itinerary.startDate, 0)?.toISOString()}
+                                partySize={itinerary.partySize}
+                                budget={itinerary.budget}
+                                hotel={data.hotels?.[0] || null}
+                            />
+                        )}
                     </div>
 
                     <div className="mb-12">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Sparkles className="w-5 h-5 text-primary" />
-                            <h2 className="text-xl font-semibold">Weather And Packing Intelligence</h2>
+                        <div
+                            className="flex items-center justify-between gap-3 mb-4 cursor-pointer select-none"
+                            onClick={() => setIsWeatherOpen((prev) => !prev)}
+                            role="button"
+                            aria-expanded={isWeatherOpen}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault()
+                                    setIsWeatherOpen((prev) => !prev)
+                                }
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-primary" />
+                                <h2 className="text-xl font-semibold">Weather And Packing Intelligence</h2>
+                            </div>
+                            <ChevronRight
+                                className={`w-5 h-5 text-muted-foreground transition-transform ${isWeatherOpen ? "rotate-90" : "rotate-0"}`}
+                            />
                         </div>
-                        <WeatherWidget
-                            destination={data.overview.destination || itinerary.destination}
-                            startDate={itinerary.startDate}
-                            endDate={itinerary.endDate}
-                        />
+
+                        {isWeatherOpen && (
+                            <WeatherWidget
+                                destination={data.overview.destination || itinerary.destination}
+                                startDate={itinerary.startDate}
+                                endDate={itinerary.endDate}
+                            />
+                        )}
                     </div>
 
                     {/* Highlights */}
@@ -728,7 +887,7 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                                 })()}
                                             </div>
                                             <p className="text-sm text-muted-foreground mt-2">
-                                                Daily cost: {day.dailyCost}
+                                                Daily cost: {formatConvertedAmount(day.dailyCost, day.dailyCost)}
                                             </p>
                                         </div>
                                         {itinerary.status === "DRAFT" && (
@@ -771,7 +930,7 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                                 <div className="flex items-start justify-between gap-4">
                                                     <h4 className="font-semibold">{activity.name}</h4>
                                                     <span className="text-sm font-medium text-primary whitespace-nowrap">
-                                                        {activity.cost}
+                                                        {formatActivityCost(activity.cost)}
                                                     </span>
                                                 </div>
 
@@ -811,7 +970,7 @@ export function ItineraryView({ itinerary, data, imageUrl, photographer, photogr
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-xs text-muted-foreground">Estimated Cost:</span>
                                                             <span className="text-sm font-semibold text-primary">
-                                                                ₹{tCost.toLocaleString("en-IN")}
+                                                                {formatCurrency(tCost)}
                                                             </span>
                                                         </div>
                                                     )

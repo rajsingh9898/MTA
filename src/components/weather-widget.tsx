@@ -68,13 +68,75 @@ export function WeatherWidget({
   const [error, setError] = useState<string | null>(null)
   const [weather, setWeather] = useState<WeatherPayload | null>(null)
 
+  const tripDates = useMemo(() => {
+    const start = startDate ? new Date(startDate) : null
+    const end = endDate ? new Date(endDate) : null
+
+    const startValid = Boolean(start && !Number.isNaN(start.getTime()))
+    const endValid = Boolean(end && !Number.isNaN(end.getTime()))
+
+    if (!startValid && !endValid) {
+      return { start: null as Date | null, end: null as Date | null }
+    }
+
+    return {
+      start: startValid ? (start as Date) : null,
+      end: endValid ? (end as Date) : null,
+    }
+  }, [startDate, endDate])
+
+  const tripStatus = useMemo(() => {
+    if (!tripDates.start) return "no-dates"
+
+    const now = new Date()
+    const startDay = new Date(tripDates.start)
+    const nowDay = new Date(now)
+    startDay.setHours(0, 0, 0, 0)
+    nowDay.setHours(0, 0, 0, 0)
+
+    const diffDaysToStart = Math.floor(
+      (startDay.getTime() - nowDay.getTime()) / (1000 * 60 * 60 * 24)
+    )
+
+    if (diffDaysToStart > 30) return "far-future"   // trip > 30 days away
+    if (diffDaysToStart >= 0) return "upcoming"     // trip starting within 30 days
+    // trip started in the past — check if still ongoing
+    if (tripDates.end) {
+      const endDay = new Date(tripDates.end)
+      endDay.setHours(0, 0, 0, 0)
+      if (endDay >= nowDay) return "ongoing"         // currently on the trip
+    }
+    return "past"                                   // entire trip is in the past
+  }, [tripDates.start, tripDates.end])
+
+  const shouldUseTripRange = tripStatus === "upcoming" || tripStatus === "ongoing"
+
+  const tripRangeLabel = useMemo(() => {
+    const formatDate = (d: Date) =>
+      d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+
+    if (tripDates.start && tripDates.end) {
+      return `${formatDate(tripDates.start)} - ${formatDate(tripDates.end)}`
+    }
+
+    if (tripDates.start) {
+      return formatDate(tripDates.start)
+    }
+
+    return null
+  }, [tripDates.end, tripDates.start])
+
   const params = useMemo(() => {
     const query = new URLSearchParams({ destination })
-    if (startDate) query.set("startDate", new Date(startDate).toISOString())
-    if (endDate) query.set("endDate", new Date(endDate).toISOString())
+
+    if (shouldUseTripRange) {
+      if (tripDates.start) query.set("startDate", tripDates.start.toISOString())
+      if (tripDates.end) query.set("endDate", tripDates.end.toISOString())
+    }
+
     query.set("includeAiSummary", "true")
     return query
-  }, [destination, startDate, endDate])
+  }, [destination, shouldUseTripRange, tripDates.end, tripDates.start])
 
   useEffect(() => {
     if (!destination) return
@@ -104,6 +166,67 @@ export function WeatherWidget({
       isMounted = false
     }
   }, [destination, params])
+
+  // ── Compute which forecast days to show ─────────────────────────────────────
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const visibleForecast = useMemo(() => {
+    if (!weather) return []
+
+    const todayMs = today.getTime()
+
+    if (tripStatus === "far-future") {
+      // Only show today's weather (first day >= today)
+      return weather.forecast.filter((d) => {
+        const dayMs = new Date(d.date).setHours(0, 0, 0, 0)
+        return dayMs >= todayMs
+      }).slice(0, 1)
+    }
+
+    if (tripStatus === "past") {
+      // Trip already ended — show from today onwards (up to 4 days)
+      return weather.forecast.filter((d) => {
+        const dayMs = new Date(d.date).setHours(0, 0, 0, 0)
+        return dayMs >= todayMs
+      }).slice(0, 4)
+    }
+
+    if (tripStatus === "ongoing") {
+      // Show from today through the end of the trip
+      const endMs = tripDates.end ? new Date(tripDates.end).setHours(0, 0, 0, 0) : Infinity
+      return weather.forecast.filter((d) => {
+        const dayMs = new Date(d.date).setHours(0, 0, 0, 0)
+        return dayMs >= todayMs && dayMs <= endMs
+      }).slice(0, 4)
+    }
+
+    if (tripStatus === "upcoming") {
+      // Show forecast days within the booked trip window
+      const startMs = tripDates.start ? new Date(tripDates.start).setHours(0, 0, 0, 0) : todayMs
+      const endMs = tripDates.end ? new Date(tripDates.end).setHours(0, 0, 0, 0) : Infinity
+      return weather.forecast.filter((d) => {
+        const dayMs = new Date(d.date).setHours(0, 0, 0, 0)
+        return dayMs >= startMs && dayMs <= endMs
+      }).slice(0, 4)
+    }
+
+    // Fallback — show up to 4 future days
+    return weather.forecast.filter((d) => {
+      const dayMs = new Date(d.date).setHours(0, 0, 0, 0)
+      return dayMs >= todayMs
+    }).slice(0, 4)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weather, tripStatus, tripDates.start, tripDates.end])
+
+  const forecastLabel = useMemo(() => {
+    if (tripStatus === "far-future") return "Today's weather (trip forecast available within 30 days)"
+    if (tripStatus === "past") return "Current weather (trip has ended)"
+    if (tripStatus === "ongoing") return "Current trip forecast"
+    if (tripStatus === "upcoming") return `Trip forecast: ${tripRangeLabel ?? ""}`
+    return "Forecast"
+  }, [tripStatus, tripRangeLabel])
+  // ────────────────────────────────────────────────────────────────────────────
 
   if (!weather && !error) {
     return (
@@ -139,6 +262,11 @@ export function WeatherWidget({
           <p className="text-sm text-muted-foreground line-clamp-2">
             {weather.destination}: {weather.current.description}
           </p>
+          {tripRangeLabel && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Trip dates: {tripRangeLabel}
+            </p>
+          )}
         </div>
         <div className="text-right">
           <p className="text-2xl font-semibold">{Math.round(weather.current.temperatureC)}°C</p>
@@ -146,17 +274,34 @@ export function WeatherWidget({
         </div>
       </div>
 
+      {/* Forecast label */}
+      <p className="text-xs text-muted-foreground -mb-1">{forecastLabel}</p>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {weather.forecast.slice(0, 4).map((day) => (
-          <div key={day.date} className="rounded-xl border border-border/60 p-3 bg-secondary/20">
-            <p className="text-xs text-muted-foreground mb-1">
-              {new Date(day.date).toLocaleDateString("en-US", { weekday: "short" })}
-            </p>
-            <p className="text-sm font-semibold">{Math.round(day.maxTempC)}°C / {Math.round(day.minTempC)}°C</p>
-            <p className="text-xs text-muted-foreground line-clamp-1">{day.condition}</p>
-            <p className="text-[11px] text-muted-foreground">Rain {Math.round(day.precipitationChance * 100)}%</p>
-          </div>
-        ))}
+        {visibleForecast.length === 0 ? (
+          <p className="col-span-4 text-sm text-muted-foreground">No forecast data available for the selected dates.</p>
+        ) : (
+          visibleForecast.map((day) => {
+            const dayMs = new Date(day.date).setHours(0, 0, 0, 0)
+            const isToday = dayMs === today.getTime()
+            return (
+              <div key={day.date} className={`rounded-xl border p-3 bg-secondary/20 ${
+                isToday ? "border-primary/60 ring-1 ring-primary/30" : "border-border/60"
+              }`}>
+                <p className="text-xs text-muted-foreground mb-1">
+                  {isToday ? (
+                    <span className="text-primary font-semibold">Today</span>
+                  ) : (
+                    new Date(day.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+                  )}
+                </p>
+                <p className="text-sm font-semibold">{Math.round(day.maxTempC)}°C / {Math.round(day.minTempC)}°C</p>
+                <p className="text-xs text-muted-foreground line-clamp-1">{day.condition}</p>
+                <p className="text-[11px] text-muted-foreground">Rain {Math.round(day.precipitationChance * 100)}%</p>
+              </div>
+            )
+          })
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

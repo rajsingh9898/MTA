@@ -86,6 +86,7 @@ interface TripCostEstimatorProps {
     startDate?: string | Date | null
     endDate?: string | Date | null
     origin?: string
+    selectedCurrency?: SupportedCurrency
 }
 
 const SUPPORTED_CURRENCIES = ["INR", "USD", "EUR", "GBP", "NPR", "AED"] as const
@@ -109,6 +110,7 @@ export function TripCostEstimator({
     startDate,
     endDate,
     origin = "",
+    selectedCurrency,
 }: TripCostEstimatorProps) {
     const [costData, setCostData] = useState<CostData | null>(null)
     const [loading, setLoading] = useState(true)
@@ -177,6 +179,14 @@ export function TripCostEstimator({
         }, 300)
     }
 
+    useEffect(() => {
+        if (!selectedCurrency || selectedCurrency === currency) {
+            return
+        }
+
+        void handleCurrencyChange(selectedCurrency)
+    }, [selectedCurrency, currency])
+
     async function handleCurrencyChange(nextCurrency: SupportedCurrency) {
         setCurrency(nextCurrency)
 
@@ -233,20 +243,22 @@ export function TripCostEstimator({
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <select
-                        value={currency}
-                        onChange={(e) => {
-                            const next = e.target.value as SupportedCurrency
-                            void handleCurrencyChange(next)
-                        }}
-                        disabled={exchangeLoading}
-                        className="h-8 rounded-full border border-border bg-background px-3 text-xs font-medium"
-                        aria-label="Select currency"
-                    >
-                        {SUPPORTED_CURRENCIES.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                        ))}
-                    </select>
+                    {!selectedCurrency && (
+                        <select
+                            value={currency}
+                            onChange={(e) => {
+                                const next = e.target.value as SupportedCurrency
+                                void handleCurrencyChange(next)
+                            }}
+                            disabled={exchangeLoading}
+                            className="h-8 rounded-full border border-border bg-background px-3 text-xs font-medium"
+                            aria-label="Select currency"
+                        >
+                            {SUPPORTED_CURRENCIES.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
+                    )}
                     <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing || loading} className="gap-2 rounded-full">
                         {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Refresh
                     </Button>

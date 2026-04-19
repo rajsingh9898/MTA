@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -20,12 +20,23 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { validateCity } from "@/lib/city-validation"
 
 const registerSchema = z.object({
-    name: z.string().min(2, "Name is required"),
-    email: z.string().email("Please enter a valid email"),
-    phoneNumber: z.string().min(10, "Phone number is required"),
-    city: z.string().min(2, "City is required"),
+    name: z.string()
+        .min(2, "Name is required")
+        .max(80, "Name must be at most 80 characters"),
+    email: z.string()
+        .email("Please enter a valid email")
+        .max(64, "Email must be at most 64 characters"),
+    phoneNumber: z.string()
+        .regex(/^[0-9]+$/, "Phone number must contain only digits")
+        .min(10, "Phone number must be at least 10 digits")
+        .max(20, "Phone number must be at most 20 digits"),
+    city: z.string()
+        .min(2, "City is required")
+        .max(100, "City name is too long")
+        .regex(/^[a-zA-Z\s\-']+$/, "City must contain only letters, spaces, hyphens, and apostrophes"),
     password: z
         .string()
         .min(8, "Password must be at least 8 characters")
@@ -42,6 +53,11 @@ export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [step, setStep] = useState<'register' | 'otp'>('register')
     const [email, setEmail] = useState("")
+    const [isCityValidating, setIsCityValidating] = useState(false)
+    const [cityValidationStatus, setCityValidationStatus] = useState<{
+        valid: boolean
+        message?: string
+    } | null>(null)
 
     const form = useForm<RegisterFormValues>({
         resolver: zodResolver(registerSchema),
@@ -58,7 +74,40 @@ export default function RegisterPage() {
         defaultValues: { otp: "" },
     })
 
+    const handleCityBlur = async (city: string) => {
+        if (!city || city.trim().length < 2) {
+            setCityValidationStatus(null)
+            return
+        }
+
+        setIsCityValidating(true)
+        setCityValidationStatus(null)
+
+        const result = await validateCity(city)
+        setCityValidationStatus(result)
+        setIsCityValidating(false)
+    }
+
     async function onSubmit(data: RegisterFormValues) {
+        // Check if city is validated
+        if (cityValidationStatus && !cityValidationStatus.valid) {
+            toast.error("Please enter a valid city name")
+            return
+        }
+
+        // If city hasn't been validated yet, validate it now
+        if (!cityValidationStatus && data.city) {
+            setIsLoading(true)
+            const result = await validateCity(data.city)
+            setCityValidationStatus(result)
+            setIsLoading(false)
+
+            if (!result.valid) {
+                toast.error(result.message || "Please enter a valid city name")
+                return
+            }
+        }
+
         setIsLoading(true)
 
         try {
@@ -150,6 +199,7 @@ export default function RegisterPage() {
                                         <FormControl>
                                             <Input
                                                 placeholder="John Doe"
+                                                maxLength={80}
                                                 disabled={isLoading}
                                                 {...field}
                                             />
@@ -169,6 +219,7 @@ export default function RegisterPage() {
                                             <FormControl>
                                                 <Input
                                                     placeholder="+1234567890"
+                                                    maxLength={20}
                                                     disabled={isLoading}
                                                     {...field}
                                                 />
@@ -185,12 +236,31 @@ export default function RegisterPage() {
                                         <FormItem>
                                             <FormLabel className="text-sm font-medium">City</FormLabel>
                                             <FormControl>
-                                                <Input
-                                                    placeholder="New York"
-                                                    disabled={isLoading}
-                                                    {...field}
-                                                />
+                                                <div className="relative">
+                                                    <Input
+                                                        placeholder="New York"
+                                                        maxLength={100}
+                                                        disabled={isLoading || isCityValidating}
+                                                        {...field}
+                                                        onBlur={(e) => handleCityBlur(e.target.value)}
+                                                    />
+                                                    {isCityValidating && (
+                                                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                                                    )}
+                                                    {!isCityValidating && cityValidationStatus && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                            {cityValidationStatus.valid ? (
+                                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                            ) : (
+                                                                <XCircle className="h-4 w-4 text-red-500" />
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </FormControl>
+                                            {cityValidationStatus && !cityValidationStatus.valid && (
+                                                <p className="text-xs text-red-500 mt-1">{cityValidationStatus.message}</p>
+                                            )}
                                             <FormMessage className="text-xs" />
                                         </FormItem>
                                     )}
@@ -208,6 +278,7 @@ export default function RegisterPage() {
                                                 placeholder="you@example.com"
                                                 type="email"
                                                 autoComplete="email"
+                                                maxLength={64}
                                                 disabled={isLoading}
                                                 {...field}
                                             />

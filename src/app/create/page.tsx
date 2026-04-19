@@ -416,35 +416,21 @@ export default function CreateItineraryPage() {
                     const { latitude, longitude } = position.coords
                     console.log("Got coordinates:", { latitude, longitude })
 
-                    // Use BigDataCloud for reverse geocoding (Nominatim often blocks production domains)
-                    const res = await fetch(
-                        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-                    )
+                    // Send accurate browser GPS coordinates securely to our own backend API 
+                    // This guarantees we get the exact city (not the ISP hub city) and bypasses adblockers!
+                    const res = await fetch(`/api/location?lat=${latitude}&lon=${longitude}`)
 
                     if (!res.ok) {
-                        throw new Error(`Geocoding failed: ${res.status}`)
+                        throw new Error(`Location API failed: ${res.status}`)
                     }
 
-                    const geo = await res.json()
-                    console.log("Geocoding response:", geo)
+                    const data = await res.json()
+                    console.log("Location detected API response:", data)
 
-                    const cityName = geo.city || geo.locality || geo.principalSubdivision || ""
-                    const country = geo.countryName || ""
-                    const state = geo.principalSubdivision || ""
-
-                    // Format: "City, State, Country" for better accuracy
-                    let formatted = cityName
-                    if (cityName) {
-                        if (state && state !== cityName) {
-                            formatted = country ? `${cityName}, ${state}, ${country}` : `${cityName}, ${state}`
-                        } else if (country) {
-                            formatted = `${cityName}, ${country}`
-                        }
-                    }
-
-                    if (formatted) {
+                    if (data.city) {
+                        const formatted = data.country ? `${data.city}, ${data.country}` : data.city
                         fieldOnChange(formatted)
-                        toast.success(`📍 Location detected: ${cityName}`)
+                        toast.success(`📍 Location detected: ${data.city}`)
                         console.log("Successfully detected location:", formatted)
                         setLocationLoading(false)
                     } else {
