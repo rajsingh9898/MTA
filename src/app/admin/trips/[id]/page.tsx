@@ -95,8 +95,50 @@ export default async function AdminTripDetailsPage({
                         </div>
                     </div>
 
+                    {/* Visual Day-by-day text format */}
+                    {typeof itinerary.itineraryData === 'object' && itinerary.itineraryData !== null && "days" in (itinerary.itineraryData as any) && Array.isArray((itinerary.itineraryData as any).days) && (
+                        <div className="mb-8 space-y-6">
+                            <h2 className="text-xl font-semibold">Day by Day Itinerary</h2>
+                            <div className="space-y-4">
+                                {(itinerary.itineraryData as any).days.map((day: any, idx: number) => (
+                                    <div key={idx} className="bg-card border border-border/60 rounded-2xl p-6">
+                                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-border/60">
+                                            <h3 className="font-semibold text-lg text-primary">Day {day.day}</h3>
+                                            {day.dailyCost && <span className="text-sm font-medium bg-secondary/50 px-3 py-1 rounded-full">Cost: {day.dailyCost}</span>}
+                                        </div>
+                                        <div className="space-y-5">
+                                            {day.activities?.map((act: any, actIdx: number) => (
+                                                <div key={actIdx} className="relative pl-6 before:absolute before:left-0 before:top-2 before:w-2 before:h-2 before:rounded-full before:bg-primary/50">
+                                                    <p className="font-semibold">{act.timeSlot ? `${act.timeSlot} — ` : ""}{act.name || "Activity"}</p>
+                                                    {act.description && <p className="text-sm text-muted-foreground mt-1">{act.description}</p>}
+                                                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                                        {act.cost && (
+                                                            <span className="bg-muted/30 px-2 py-1 rounded-md border border-border/30">
+                                                                Cost: {act.cost}
+                                                            </span>
+                                                        )}
+                                                        {act.dietaryOptions && (
+                                                            <span className="bg-muted/30 px-2 py-1 rounded-md border border-border/30">
+                                                                {act.dietaryOptions}
+                                                            </span>
+                                                        )}
+                                                        {act.accessibilityInfo && (
+                                                            <span className="bg-muted/30 px-2 py-1 rounded-md border border-border/30">
+                                                                {act.accessibilityInfo}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
-                        <div className="px-6 py-4 border-b border-border/60 bg-muted/20">
+                        <div className="px-6 py-4 border-b border-border/60 bg-muted/20 flex items-center justify-between">
                             <p className="text-sm font-semibold">Raw Itinerary JSON</p>
                         </div>
                         <pre className="p-6 text-xs overflow-auto max-h-[520px] leading-relaxed">

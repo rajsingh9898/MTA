@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { Navbar } from "@/components/ui/navbar"
@@ -13,11 +14,26 @@ export default async function AdminUsersPage() {
         redirect("/login")
     }
 
-    const [totalUsers, verifiedUsers, recentUsers] = await Promise.all([
+    async function deleteUserAction(formData: FormData) {
+        "use server"
+        const session = await auth()
+        if (!session?.user?.isAdmin) return
+
+        const userId = formData.get("userId")
+        if (typeof userId === "string") {
+            try {
+                await prisma.user.delete({ where: { id: userId } })
+                revalidatePath("/admin/users")
+            } catch (e) {
+                console.error("Failed to delete user:", e)
+            }
+        }
+    }
+
+    const [totalUsers, verifiedUsers, allUsers] = await Promise.all([
         prisma.user.count(),
         prisma.user.count({ where: { isVerified: true } }),
         prisma.user.findMany({
-            take: 10,
             orderBy: { createdAt: "desc" },
             select: {
                 id: true,
@@ -80,7 +96,7 @@ export default async function AdminUsersPage() {
 
                     <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
                         <div className="px-6 py-4 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                            <h2 className="font-semibold text-sm">Recent User Signups</h2>
+                            <h2 className="font-semibold text-sm">All Users</h2>
                             <Link href="/admin/trips" className="text-xs font-semibold text-primary hover:text-primary/80 inline-flex items-center gap-1">
                                 View Trips <ArrowRight className="w-3 h-3" />
                             </Link>
@@ -94,10 +110,11 @@ export default async function AdminUsersPage() {
                                         <th className="px-6 py-3">City</th>
                                         <th className="px-6 py-3">Phone Number</th>
                                         <th className="px-6 py-3">Status</th>
+                                        <th className="px-6 py-3 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/60">
-                                    {recentUsers.map((user: (typeof recentUsers)[number]) => (
+                                    {allUsers.map((user: (typeof allUsers)[number]) => (
                                         <tr key={user.id} className="hover:bg-muted/20">
                                             <td className="px-6 py-3">{user.name || "Unnamed User"}</td>
                                             <td className="px-6 py-3 text-muted-foreground">{user.email}</td>
@@ -107,6 +124,14 @@ export default async function AdminUsersPage() {
                                                 <span className={user.isVerified ? "text-green-600 text-xs font-semibold" : "text-amber-600 text-xs font-semibold"}>
                                                     {user.isVerified ? "Verified" : "Pending"}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-3 text-right">
+                                                <form action={deleteUserAction}>
+                                                    <input type="hidden" name="userId" value={user.id} />
+                                                    <button type="submit" className="text-red-500 hover:text-red-600 text-xs font-semibold uppercase tracking-wider transition-colors inline-flex items-center gap-1">
+                                                        Delete
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     ))}
