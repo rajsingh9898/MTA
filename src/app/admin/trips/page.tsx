@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import { checkAdmin } from "@/lib/auth-admin"
 import { Navbar } from "@/components/ui/navbar"
 import { Eye } from "lucide-react"
 
@@ -17,10 +17,7 @@ function formatDate(date: Date | null) {
 }
 
 export default async function AdminTripsPage() {
-    const session = await auth()
-    if (!session?.user?.isAdmin) {
-        redirect("/login")
-    }
+    await checkAdmin()
 
     const trips: Array<{
         id: string

@@ -1,17 +1,14 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import { checkAdmin } from "@/lib/auth-admin"
 import { Navbar } from "@/components/ui/navbar"
 import { FileText, ArrowRight, PenSquare } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminBlogPage() {
-    const session = await auth()
-    if (!session?.user?.isAdmin) {
-        redirect("/login")
-    }
+    await checkAdmin()
 
     const destinationSamples: Array<{
         id: string

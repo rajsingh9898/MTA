@@ -14,8 +14,27 @@ export function ProfileTest() {
     const [profileData, setProfileData] = useState<ProfileData | null>(null)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
+    const [dbIsAdmin, setDbIsAdmin] = useState(false)
+
     // Debug: Log session data
     console.log('Session data:', session)
+
+    // Fetch direct database admin status to bypass cached next-auth JWT session
+    useEffect(() => {
+        if (session?.user?.email) {
+            fetch("/api/auth/is-admin")
+                .then(res => res.json())
+                .then(data => {
+                    setDbIsAdmin(!!data.isAdmin)
+                })
+                .catch(err => {
+                    console.error("Error fetching admin status:", err)
+                    setDbIsAdmin(false)
+                })
+        } else {
+            setDbIsAdmin(false)
+        }
+    }, [session])
 
     // Load profile data
     useEffect(() => {
@@ -245,7 +264,7 @@ export function ProfileTest() {
                                 </motion.button>
 
                                 {/* Admin Button - Only show for admin users */}
-                                {session?.user?.isAdmin && (
+                                {dbIsAdmin && (
                                     <motion.button 
                                         className="w-full text-left px-3 py-2 text-sm hover:bg-orange-50 dark:hover:bg-orange-950/20 text-orange-600 dark:text-orange-400 transition-colors flex items-center gap-2 md:gap-3 group"
                                         onClick={() => {

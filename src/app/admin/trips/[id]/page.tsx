@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import { checkAdmin } from "@/lib/auth-admin"
 import { Navbar } from "@/components/ui/navbar"
 
 export const dynamic = "force-dynamic"
@@ -11,11 +11,7 @@ export default async function AdminTripDetailsPage({
 }: {
     params: Promise<{ id: string }>
 }) {
-    const session = await auth()
-    if (!session?.user?.isAdmin) {
-        redirect("/login")
-    }
-
+    await checkAdmin()
     const { id } = await params
 
     const itinerary = await prisma.itinerary.findUnique({

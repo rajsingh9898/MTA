@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
+import { checkAdmin } from "@/lib/auth-admin"
 import { auth } from "@/lib/auth"
 import { Navbar } from "@/components/ui/navbar"
 import { Users, UserCheck, UserPlus, ArrowRight } from "lucide-react"
@@ -9,15 +10,18 @@ import { Users, UserCheck, UserPlus, ArrowRight } from "lucide-react"
 export const dynamic = "force-dynamic"
 
 export default async function AdminUsersPage() {
-    const session = await auth()
-    if (!session?.user?.isAdmin) {
-        redirect("/login")
-    }
+    await checkAdmin()
 
     async function deleteUserAction(formData: FormData) {
         "use server"
         const session = await auth()
-        if (!session?.user?.isAdmin) return
+        if (!session?.user?.email) return
+
+        const checkDbUser = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            select: { isAdmin: true }
+        })
+        if (!checkDbUser?.isAdmin) return
 
         const userId = formData.get("userId")
         if (typeof userId === "string") {

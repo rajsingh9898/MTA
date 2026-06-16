@@ -2,18 +2,15 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import DashboardClient from "./dashboard-client"
 import { createLogger } from "@/lib/logger"
-import { auth } from "@/lib/auth"
+import { checkAdmin } from "@/lib/auth-admin"
 
 export const dynamic = "force-dynamic"
 
 const logger = createLogger("admin-dashboard")
 
 export default async function AdminDashboardPage() {
-    // Check admin authentication
-    const session = await auth()
-    if (!session?.user?.isAdmin) {
-        redirect("/login")
-    }
+    // Check admin authentication directly from DB
+    await checkAdmin()
     let stats = {
         totalUsers: 0,
         totalDestinations: 0,
