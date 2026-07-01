@@ -28,44 +28,42 @@ export default async function AdminDashboardPage() {
     }> = []
 
     try {
-        // Fetch real data from the database securely via Server Components
-        const totalUsers = await prisma.user.count()
-
-        const groupedDestinations = await prisma.itinerary.groupBy({
-            by: ['destination']
-        })
-        const totalDestinations = groupedDestinations.length
-
-        const totalTrips = await prisma.itinerary.count()
-
-        const totalAccepted = await prisma.itinerary.count({
-            where: { status: "ACCEPTED" }
-        })
-
-        const sumDaysResult = await prisma.itinerary.aggregate({
-            _sum: {
-                numDays: true
-            }
-        })
-        const totalDays = sumDaysResult._sum.numDays || 0
-
-        recentTripsRaw = await prisma.itinerary.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                destination: true,
-                status: true,
-                startDate: true,
-                endDate: true,
-                user: {
-                    select: {
-                        name: true,
-                        email: true,
+        // Run all database queries in parallel for maximum performance
+        const [
+            totalUsers,
+            groupedDestinations,
+            totalTrips,
+            totalAccepted,
+            sumDaysResult,
+            recentTripsData,
+        ] = await Promise.all([
+            prisma.user.count(),
+            prisma.itinerary.groupBy({ by: ['destination'] }),
+            prisma.itinerary.count(),
+            prisma.itinerary.count({ where: { status: "ACCEPTED" } }),
+            prisma.itinerary.aggregate({ _sum: { numDays: true } }),
+            prisma.itinerary.findMany({
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    destination: true,
+                    status: true,
+                    startDate: true,
+                    endDate: true,
+                    user: {
+                        select: {
+                            name: true,
+                            email: true,
+                        }
                     }
                 }
-            }
-        })
+            }),
+        ])
+
+        const totalDestinations = groupedDestinations.length
+        const totalDays = sumDaysResult._sum.numDays || 0
+        recentTripsRaw = recentTripsData
 
         stats = {
             totalUsers,

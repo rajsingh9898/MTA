@@ -28,17 +28,24 @@ export default async function DashboardPage() {
         },
     })
 
-    // Fetch images for all itineraries in parallel
-    const imagesWithIds = await Promise.all(
-        itineraries.map(async (itinerary) => {
-            const url = await getDestinationThumbnail(itinerary.destination)
-            return { id: itinerary.id, url }
+    // Deduplicate by destination — only fetch one image per unique destination
+    const uniqueDestinations = [...new Set(itineraries.map(i => i.destination))]
+    const thumbnailsByDest = await Promise.all(
+        uniqueDestinations.map(async (dest) => {
+            const url = await getDestinationThumbnail(dest)
+            return { dest, url }
         })
     )
 
-    // Create a map for easy lookup
-    const imageMap = imagesWithIds.reduce((acc, { id, url }) => {
-        acc[id] = url
+    // Create a map: destination → thumbnail URL
+    const destToUrl = thumbnailsByDest.reduce((acc, { dest, url }) => {
+        acc[dest] = url
+        return acc
+    }, {} as Record<string, string>)
+
+    // Map itinerary IDs to their destination's thumbnail
+    const imageMap = itineraries.reduce((acc, it) => {
+        acc[it.id] = destToUrl[it.destination]
         return acc
     }, {} as Record<string, string>)
 

@@ -8,6 +8,7 @@ import { motion } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import dynamic from "next/dynamic"
 
 import Image from "next/image"
 import Link from "next/link"
@@ -46,9 +47,21 @@ import { Button } from "@/components/ui/button"
 import { ShareItineraryButton } from "@/components/share-itinerary-button"
 import { DeleteItineraryButton } from "@/components/delete-itinerary-button"
 import { ExportPdfButton } from "@/components/export-pdf-button"
-import { DailyHotelSuggestion } from "@/components/daily-hotel-suggestion"
-import { TripCostEstimator } from "@/components/trip-cost-estimator"
-import { WeatherWidget } from "@/components/weather-widget"
+
+// Lazy-load heavy components — these are behind accordion toggles
+// so they don't need to be in the initial JS bundle
+const DailyHotelSuggestion = dynamic(() => import("@/components/daily-hotel-suggestion").then(m => m.DailyHotelSuggestion), {
+    ssr: false,
+    loading: () => <div className="bg-card border border-border/60 rounded-2xl p-6 animate-pulse"><div className="h-32 bg-muted rounded-xl" /></div>,
+})
+const TripCostEstimator = dynamic(() => import("@/components/trip-cost-estimator").then(m => m.TripCostEstimator), {
+    ssr: false,
+    loading: () => <div className="bg-card border border-border/60 rounded-2xl p-6 animate-pulse"><div className="h-32 bg-muted rounded-xl" /></div>,
+})
+const WeatherWidget = dynamic(() => import("@/components/weather-widget").then(m => m.WeatherWidget), {
+    ssr: false,
+    loading: () => <div className="bg-card border border-border/60 rounded-2xl p-6 animate-pulse"><div className="h-32 bg-muted rounded-xl" /></div>,
+})
 
 function getDetailedDate(startDateObj: string | Date | null | undefined, dayIdx: number) {
     if (!startDateObj) return null;

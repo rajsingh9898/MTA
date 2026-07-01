@@ -16,21 +16,18 @@ export function ProfileTest() {
 
     const [dbIsAdmin, setDbIsAdmin] = useState(false)
 
-    // Debug: Log session data
-    console.log('Session data:', session)
 
-    // Fetch direct database admin status to bypass cached next-auth JWT session
+
+    // Use isAdmin from the JWT session directly (avoids extra API call on every page)
+    // Falls back to API only if the JWT doesn't include isAdmin (e.g. old session)
     useEffect(() => {
-        if (session?.user?.email) {
+        if (session?.user?.isAdmin !== undefined) {
+            setDbIsAdmin(!!session.user.isAdmin)
+        } else if (session?.user?.email) {
             fetch("/api/auth/is-admin")
                 .then(res => res.json())
-                .then(data => {
-                    setDbIsAdmin(!!data.isAdmin)
-                })
-                .catch(err => {
-                    console.error("Error fetching admin status:", err)
-                    setDbIsAdmin(false)
-                })
+                .then(data => setDbIsAdmin(!!data.isAdmin))
+                .catch(() => setDbIsAdmin(false))
         } else {
             setDbIsAdmin(false)
         }

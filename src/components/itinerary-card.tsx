@@ -1,8 +1,8 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link"
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { CalendarDays, MapPin, Users, Wallet, ArrowRight, CloudSun } from "lucide-react"
 import { format } from "date-fns"
 import { motion } from "framer-motion"
@@ -48,39 +48,52 @@ export function ItineraryCard({ itinerary, imageUrl }: ItineraryCardProps) {
     const gradient = getDestinationGradient(itinerary.destination)
     const initial = getDestinationInitial(itinerary.destination)
     const [weatherLabel, setWeatherLabel] = useState<string | null>(null)
+    const cardRef = useRef<HTMLDivElement>(null)
 
+    // Lazy-load weather data only when the card scrolls into viewport
     useEffect(() => {
+        const el = cardRef.current
+        if (!el) return
+
         let active = true
 
-        fetch(`/api/weather?destination=${encodeURIComponent(itinerary.destination)}&includeAiSummary=false`)
-            .then(async (res) => {
-                if (!res.ok) {
-                    return null
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting) {
+                    observer.disconnect()
+                    fetch(`/api/weather?destination=${encodeURIComponent(itinerary.destination)}&includeAiSummary=false`)
+                        .then(async (res) => {
+                            if (!res.ok) return null
+                            return res.json() as Promise<{
+                                weather: {
+                                    current: { condition: string; temperatureC: number }
+                                }
+                            }>
+                        })
+                        .then((data) => {
+                            if (!active || !data?.weather?.current) return
+                            const c = data.weather.current
+                            setWeatherLabel(`${Math.round(c.temperatureC)}°C • ${c.condition}`)
+                        })
+                        .catch(() => {
+                            if (active) setWeatherLabel(null)
+                        })
                 }
-                return res.json() as Promise<{
-                    weather: {
-                        current: { condition: string; temperatureC: number }
-                    }
-                }>
-            })
-            .then((data) => {
-                if (!active || !data?.weather?.current) return
-                const c = data.weather.current
-                setWeatherLabel(`${Math.round(c.temperatureC)}°C • ${c.condition}`)
-            })
-            .catch(() => {
-                if (active) {
-                    setWeatherLabel(null)
-                }
-            })
+            },
+            { rootMargin: "200px" }
+        )
+
+        observer.observe(el)
 
         return () => {
             active = false
+            observer.disconnect()
         }
     }, [itinerary.destination])
 
     return (
         <motion.div
+            ref={cardRef}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
