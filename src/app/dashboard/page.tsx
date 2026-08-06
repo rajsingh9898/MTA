@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma"
 import type { Itinerary } from "@prisma/client"
 import { Button } from "@/components/ui/button"
 import { ItineraryCard } from "@/components/itinerary-card"
+import { DashboardTripsClient } from "./dashboard-trips-client"
 import { Navbar } from "@/components/ui/navbar"
 import { getDestinationThumbnail } from "@/lib/unsplash"
 
@@ -21,7 +22,9 @@ export default async function DashboardPage() {
         where: {
             userId: session.user.id,
             deletedAt: null,
-            status: "ACCEPTED",
+            status: {
+                in: ["ACCEPTED", "DRAFT"]
+            }
         },
         orderBy: {
             createdAt: "desc",
@@ -48,6 +51,38 @@ export default async function DashboardPage() {
         acc[it.id] = destToUrl[it.destination]
         return acc
     }, {} as Record<string, string>)
+
+    // Categorize trips
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const upcomingTrips: Itinerary[] = []
+    const completedTrips: Itinerary[] = []
+    const draftTrips: Itinerary[] = []
+
+    for (const itinerary of itineraries) {
+        if (itinerary.status === "DRAFT") {
+            draftTrips.push(itinerary)
+        } else if (itinerary.status === "ACCEPTED") {
+            let isUpcoming = true
+            if (itinerary.endDate) {
+                isUpcoming = new Date(itinerary.endDate) >= today
+            } else if (itinerary.startDate) {
+                const start = new Date(itinerary.startDate)
+                const end = new Date(start)
+                end.setDate(start.getDate() + itinerary.numDays)
+                isUpcoming = end >= today
+            }
+            
+            if (isUpcoming) {
+                upcomingTrips.push(itinerary)
+            } else {
+                completedTrips.push(itinerary)
+            }
+        }
+    }
+
+    const acceptedTrips = itineraries.filter(i => i.status === "ACCEPTED")
 
     // Get first name for greeting
     const firstName = session.user.name || session.user.email?.split("@")[0] || "Traveler"
@@ -78,28 +113,28 @@ export default async function DashboardPage() {
                     </div>
 
                     {/* Stats Bar */}
-                    {itineraries.length > 0 && (
+                    {acceptedTrips.length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
                             <div className="bg-card border border-border/60 rounded-2xl p-4">
                                 <p className="label mb-1">Total Trips</p>
-                                <p className="text-2xl font-semibold">{itineraries.length}</p>
+                                <p className="text-2xl font-semibold">{acceptedTrips.length}</p>
                             </div>
                             <div className="bg-card border border-border/60 rounded-2xl p-4">
                                 <p className="label mb-1">Destinations</p>
                                 <p className="text-2xl font-semibold">
-                                    {new Set(itineraries.map(i => i.destination)).size}
+                                    {new Set(acceptedTrips.map(i => i.destination)).size}
                                 </p>
                             </div>
                             <div className="bg-card border border-border/60 rounded-2xl p-4">
                                 <p className="label mb-1">Total Days</p>
                                 <p className="text-2xl font-semibold">
-                                    {itineraries.reduce((sum, i) => sum + i.numDays, 0)}
+                                    {acceptedTrips.reduce((sum, i) => sum + i.numDays, 0)}
                                 </p>
                             </div>
                             <div className="bg-card border border-border/60 rounded-2xl p-4">
                                 <p className="label mb-1">Travelers</p>
                                 <p className="text-2xl font-semibold">
-                                    {itineraries.reduce((sum, i) => sum + i.partySize, 0)}
+                                    {acceptedTrips.reduce((sum, i) => sum + i.partySize, 0)}
                                 </p>
                             </div>
                         </div>
@@ -126,26 +161,12 @@ export default async function DashboardPage() {
                             </Button>
                         </div>
                     ) : (
-                        <>
-                            {/* Section Header */}
-                            <div className="flex items-center gap-2 mb-6">
-                                <h2 className="text-lg font-semibold">Your Trips</h2>
-                                <span className="text-sm text-muted-foreground">
-                                    ({itineraries.length})
-                                </span>
-                            </div>
-
-                            {/* Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {itineraries.map((itinerary: Itinerary) => (
-                                    <ItineraryCard
-                                        key={itinerary.id}
-                                        itinerary={itinerary}
-                                        imageUrl={imageMap[itinerary.id]}
-                                    />
-                                ))}
-                            </div>
-                        </>
+                        <DashboardTripsClient
+                            upcomingTrips={upcomingTrips}
+                            completedTrips={completedTrips}
+                            draftTrips={draftTrips}
+                            imageMap={imageMap}
+                        />
                     )}
                 </div>
             </div>

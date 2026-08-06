@@ -16,6 +16,7 @@ interface ItineraryCardProps {
         budget: string
         partySize: number
         createdAt: Date
+        status?: string
     }
     imageUrl?: string
 }
@@ -133,6 +134,12 @@ export function ItineraryCard({ itinerary, imageUrl }: ItineraryCardProps) {
                                 {weatherLabel}
                             </div>
                         ) : null}
+
+                        {itinerary.status === "DRAFT" && (
+                            <div className="absolute top-3 right-3 inline-flex items-center rounded-full px-2.5 py-0.5 bg-amber-500/90 backdrop-blur-sm text-[10px] font-semibold text-white uppercase tracking-wider shadow-sm z-20">
+                                Draft
+                            </div>
+                        )}
 
                         <div className="absolute bottom-0 left-0 right-0 p-4">
                             <div className="flex items-center justify-between gap-2 text-white">
