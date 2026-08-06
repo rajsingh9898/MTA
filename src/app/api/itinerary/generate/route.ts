@@ -276,7 +276,9 @@ CRITICAL REQUIREMENTS:
 6. ${promptContext.accessibilityContext}
 7. ${promptContext.interestsContext}
 8. Include 3-4 top hotel recommendations that STRICTLY fit the chosen budget tier (${budget}). Do not suggest luxury hotels for economy budgets, and vice versa.
-9. The days array MUST contain exactly ${numDays} day objects, each with a "day" field from 1 to ${numDays}`
+9. The days array MUST contain exactly ${numDays} day objects, each with a "day" field from 1 to ${numDays}
+10. TAILOR TO PREFERENCES AT ALL PACES: You MUST respect and incorporate the selected Interests, Dietary Restrictions, and Accessibility requirements regardless of the Activity Level (${activityLevel}). For instance, if the pace is 'Active' or 'Very Active', create a fast-paced itinerary but still structure the activities around their selected interests (e.g. Art/Nature), specify accessible venues, and choose restaurants matching the dietary needs.
+11. ACTIVITY-LEVEL DETAILS: For each activity, you MUST fill in the 'accessibilityInfo' and 'dietaryOptions' fields in the JSON response if relevant (especially for dining activities). Do not leave them blank or omit them.`
 
         const userPrompt = `
           Create a ${numDays}-day itinerary for ${destination} based on these preferences:

@@ -11,7 +11,8 @@ import {
     Clock,
     Sparkles,
     Share2,
-    ArrowRight
+    ArrowRight,
+    Heart
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -23,6 +24,8 @@ interface Activity {
     description: string
     cost: string
     whyRecommended: string
+    accessibilityInfo?: string
+    dietaryOptions?: string
 }
 
 interface Day {
@@ -240,6 +243,59 @@ export function SharedItineraryView({ itinerary, data, imageUrl, photographer, p
                         </div>
                     </motion.div>
 
+                    {/* Selected Preferences */}
+                    {(itinerary.interests?.length > 0 || itinerary.dietaryRestrictions?.length > 0 || itinerary.accessibilityNeeds?.length > 0) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.3 }}
+                            className="bg-card border border-border/60 rounded-2xl p-6 mb-8 shadow-soft"
+                        >
+                            <h3 className="font-display font-semibold text-base mb-4 flex items-center gap-2 text-foreground">
+                                <Heart className="w-4 h-4 text-primary" />
+                                Travel Preferences
+                            </h3>
+                            <div className="flex flex-wrap gap-6">
+                                {itinerary.interests?.length > 0 && (
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Interests</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {itinerary.interests.map((interest) => (
+                                                <span key={interest} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
+                                                    {interest}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {itinerary.dietaryRestrictions?.length > 0 && (
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Dietary Restrictions</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {itinerary.dietaryRestrictions.map((diet) => (
+                                                <span key={diet} className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium border border-amber-500/20">
+                                                    {diet}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {itinerary.accessibilityNeeds?.length > 0 && (
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Accessibility Needs</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {itinerary.accessibilityNeeds.map((need) => (
+                                                <span key={need} className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-medium border border-emerald-500/20">
+                                                    {need}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+
                     {/* Highlights */}
                     {data.summary?.keyHighlights && data.summary.keyHighlights.length > 0 && (
                         <motion.div
@@ -326,6 +382,20 @@ export function SharedItineraryView({ itinerary, data, imageUrl, photographer, p
                                                     <div className="mt-2 flex items-start gap-2 text-sm">
                                                         <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                                                         <span className="text-muted-foreground">{activity.whyRecommended}</span>
+                                                    </div>
+                                                )}
+
+                                                {activity.dietaryOptions && (
+                                                    <div className="mt-2 flex items-center gap-1.5 text-xs bg-amber-500/5 text-amber-700 dark:text-amber-400 border border-amber-500/10 rounded-lg px-2.5 py-1 w-fit">
+                                                        <span className="font-semibold">Dietary Options:</span>
+                                                        <span>{activity.dietaryOptions}</span>
+                                                    </div>
+                                                )}
+
+                                                {activity.accessibilityInfo && (
+                                                    <div className="mt-2 flex items-center gap-1.5 text-xs bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 border border-emerald-500/10 rounded-lg px-2.5 py-1 w-fit">
+                                                        <span className="font-semibold">Accessibility:</span>
+                                                        <span>{activity.accessibilityInfo}</span>
                                                     </div>
                                                 )}
                                             </div>
