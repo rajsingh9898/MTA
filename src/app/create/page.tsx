@@ -409,53 +409,68 @@ export default function CreateItineraryPage() {
             return
         }
 
-        // Request location with better options
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                try {
-                    const { latitude, longitude } = position.coords
-                    console.log("Got coordinates:", { latitude, longitude })
+        const getPosition = (options: PositionOptions): Promise<GeolocationPosition> => {
+            return new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, options)
+            })
+        }
 
-                    // Send accurate browser GPS coordinates securely to our own backend API 
-                    // This guarantees we get the exact city (not the ISP hub city) and bypasses adblockers!
-                    const res = await fetch(`/api/location?lat=${latitude}&lon=${longitude}`)
+        const processPosition = async (position: GeolocationPosition) => {
+            const { latitude, longitude } = position.coords
+            console.log("Got coordinates:", { latitude, longitude })
 
-                    if (!res.ok) {
-                        throw new Error(`Location API failed: ${res.status}`)
-                    }
+            // Send accurate browser GPS coordinates securely to our own backend API 
+            // This guarantees we get the exact city (not the ISP hub city) and bypasses adblockers!
+            const res = await fetch(`/api/location?lat=${latitude}&lon=${longitude}`)
 
-                    const data = await res.json()
-                    console.log("Location detected API response:", data)
+            if (!res.ok) {
+                throw new Error(`Location API failed: ${res.status}`)
+            }
 
-                    if (data.city) {
-                        const formatted = data.country ? `${data.city}, ${data.country}` : data.city
-                        fieldOnChange(formatted)
-                        toast.success(`📍 Location detected: ${data.city}`)
-                        console.log("Successfully detected location:", formatted)
-                        setLocationLoading(false)
-                    } else {
-                        // Last resort — use coordinates as fallback
-                        const coordFallback = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-                        fieldOnChange(coordFallback)
-                        toast.success(`📍 Location detected: ${coordFallback}`)
-                        console.log("Using coordinates as fallback:", coordFallback)
-                        setLocationLoading(false)
-                    }
-                } catch (error) {
-                    console.error("Location detection error:", error)
-                    await fallbackToIPLocation()
-                }
-            },
-            async (err) => {
-                console.error("Geolocation error:", err)
-                await fallbackToIPLocation()
-            },
-            {
-                timeout: 15000,
+            const data = await res.json()
+            console.log("Location detected API response:", data)
+
+            if (data.city) {
+                const formatted = data.country ? `${data.city}, ${data.country}` : data.city
+                fieldOnChange(formatted)
+                toast.success(`📍 Location detected: ${data.city}`)
+                console.log("Successfully detected location:", formatted)
+                setLocationLoading(false)
+                return true
+            } else {
+                // Last resort — use coordinates as fallback
+                const coordFallback = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+                fieldOnChange(coordFallback)
+                toast.success(`📍 Location detected: ${coordFallback}`)
+                console.log("Using coordinates as fallback:", coordFallback)
+                setLocationLoading(false)
+                return true
+            }
+        }
+
+        try {
+            // First attempt: High accuracy, short timeout (fast response on mobile/GPS-enabled devices)
+            const position = await getPosition({
+                timeout: 5000,
                 maximumAge: 300000, // 5 minutes
                 enableHighAccuracy: true
+            })
+            await processPosition(position)
+        } catch (error) {
+            console.warn("High accuracy geolocation failed or timed out, trying Wi-Fi triangulation fallback:", error)
+            try {
+                // Second attempt: Low accuracy (Wi-Fi triangulation), longer timeout (highly successful on desktops/laptops)
+                const position = await getPosition({
+                    timeout: 10000,
+                    maximumAge: 300000,
+                    enableHighAccuracy: false
+                })
+                await processPosition(position)
+            } catch (fallbackError) {
+                console.error("All browser geolocation attempts failed:", fallbackError)
+                await fallbackToIPLocation()
             }
-        )
+        }
     }
 
     // City suggestion functions
